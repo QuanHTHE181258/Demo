@@ -346,7 +346,7 @@
                 <div class="user-dropdown" id="userDropdown">
                     <div class="u-info">
                         <img src="https://picsum.photos/id/64/100/100" class="u-avt" alt="Avatar">
-                        <h4>Em Bé Đáng Yêu</h4>
+                        <h4>User Đáng Iu</h4>
                         <p>Hội Viên: Khách VIP 👑</p>
                         <div class="u-contact"><i class="fas fa-phone-alt"></i> 0987 654 321</div>
                         <div class="u-contact"><i class="fas fa-envelope"></i> embenho@gmail.com</div>
@@ -1135,12 +1135,12 @@
         const val = this.value.toLowerCase().trim();
         let matches = topCitiesList.filter(c => c.toLowerCase().includes(val));
         if (matches.length === 0 || val === "") { citySuggBox.style.display = 'none'; return; }
-        citySuggBox.innerHTML = matches.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#ccc; margin-right:8px;"></i> ${city}</div>`).join('');
+        citySuggBox.innerHTML = matches.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#e74c3c; margin-right:8px;"></i> ${city}</div>`).join('');
         citySuggBox.style.display = 'block';
     };
 
     citySearchInput.onfocus = function() {
-        citySuggBox.innerHTML = topCitiesList.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#ccc; margin-right:8px;"></i> ${city}</div>`).join('');
+        citySuggBox.innerHTML = topCitiesList.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#e74c3c; margin-right:8px;"></i> ${city}</div>`).join('');
         citySuggBox.style.display = 'block';
     };
 
