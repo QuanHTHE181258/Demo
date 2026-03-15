@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --primary: #1ba0e2; --bg: #f8f9fa; --surface: #ffffff; --radius: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        html { height: auto; overflow-y: scroll; }
+        body { background: #e9ecef; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+        .app-container { width: 100%; max-width: 414px; background: var(--bg); min-height: 100vh; height: auto; position: relative; overflow-x: hidden; overflow-y: visible; padding-bottom: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+        /* HEADER */
+        .main-header { background: linear-gradient(135deg, #1ba0e2, #007bff); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 20px 20px; position: relative; z-index: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .h-left, .h-right { position: relative; cursor: pointer; }
+        .h-left i { font-size: 26px; }
+        .h-mid { font-weight: 800; font-size: 18px; letter-spacing: 1px; }
+        .h-right { font-size: 14px; font-weight: bold; }
+        
+        .user-dropdown { position: absolute; top: 35px; left: 0; background: white; width: 280px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; cursor: default; }
+        .user-dropdown.show { display: flex; animation: fadeIn 0.2s ease-in-out; }
+        .u-info { padding: 20px; text-align: center; border-bottom: 1px solid #eee; background: #f8f9fa; }
+        .u-avt { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 3px solid var(--primary); }
+        .u-info h4 { color: #333; margin-bottom: 5px; font-size: 18px; }
+        .u-info p { font-size: 12px; color: #f39c12; font-weight: bold; margin-bottom: 10px; }
+        .u-contact { font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; justify-content: center; }
+        .u-contact i { color: var(--primary); }
+        .u-menu { padding: 10px 0; }
+        .u-item { padding: 12px 20px; font-size: 14px; color: #333; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .u-item i { width: 20px; color: #666; font-size: 16px; }
+        .u-item:hover { background: #f0f8ff; color: var(--primary); }
+        .u-item:hover i { color: var(--primary); }
+        
+        .lang-dropdown { position: absolute; top: 30px; right: 0; background: white; width: 140px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; cursor: default; }
+        .lang-dropdown.show { display: flex; animation: fadeIn 0.2s ease-in-out; }
+        .l-item { padding: 12px 15px; font-size: 13px; color: #333; cursor: pointer; text-align: center; border-bottom: 1px solid #eee; font-weight: 500; transition: 0.2s; }
+        .l-item:hover { background: #f8f9fa; }
+        .l-item.active { font-weight: bold; color: var(--primary); background: #f0f8ff; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .banner { margin: 16px; height: 120px; background: url('https://picsum.photos/id/10/400/200') center/cover; border-radius: 16px; display: flex; align-items: center; padding: 20px; color: white; position: relative; }
+        .banner::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.3); border-radius: 16px; }
+        .banner-text { z-index: 1; font-weight: bold; font-size: 18px; line-height: 1.4; }
+
+        /* AI TRIP PLANNER MỚI */
+        .planner-box { margin: 0 16px 16px; background: white; border-radius: 16px; padding: 20px 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .planner-header { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        
+        .p-section { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+        .p-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        
+        .p-label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; font-size: 13px; }
+        .p-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 13px; font-family: 'Inter', sans-serif; background: #fff;}
+        .p-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(27, 160, 226, 0.2); }
+        
+        .p-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .p-radio-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; color: #555; margin-bottom: 10px;}
+        .p-check-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; color: #555;}
+        
+        .slider-container { display: flex; flex-direction: column; gap: 5px; }
+        .slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: #999; font-weight: 500;}
+        input[type=range] { width: 100%; accent-color: #333; }
+        
+        .mv-add-box { display: flex; gap: 8px; margin-bottom: 10px; }
+        .btn-add { background: #f0f0f0; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; color: #555;}
+        .mv-tag { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 13px; font-weight: 500; color: #333;}
+        .mv-tag i { color: #ccc; cursor: pointer; font-size: 14px; }
+        .mv-tag i:hover { color: #e74c3c; }
+
+        .btn-plan { width: 100%; background: transparent; border: 1px solid #ddd; padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; color: #555; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; }
+        .btn-plan:hover { background: #f8f9fa; border-color: #ccc; }
+        
+        #plannerDetails { display: none; opacity: 0; transition: opacity 0.4s ease; margin-top: 15px; }
+
+        /* LOCAL AI PICK & SEARCH BAR */
+        .city-search-box { margin: 10px 16px; position: relative; }
+        .city-search-box input { width: 100%; padding: 12px 16px 12px 40px; border-radius: 15px; border: 1px solid #eee; outline: none; font-family: 'Inter', sans-serif; font-size: 13px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .city-search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--primary); }
+        .city-sugg-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); z-index: 20; display: none; overflow: hidden; margin-top: 5px; border: 1px solid #f0f0f0;}
+        .city-sugg-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f8f9fa; font-size: 13px; font-weight: 500; color: #555; transition: 0.2s;}
+        .city-sugg-item:hover { background: #f0f8ff; color: var(--primary); padding-left: 20px;}
+
+        .filter-category-bar { display: flex; gap: 12px; padding: 10px 16px 15px; overflow-x: auto; scrollbar-width: none; }
+        .cat-pill { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 70px; padding: 10px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
+        .cat-pill i { font-size: 20px; color: #3498db; }
+        .cat-pill span { font-size: 11px; color: #666; font-weight: 500; }
+        .cat-pill.active { background: #3498db; }
+        .cat-pill.active i, .cat-pill.active span { color: white; }
+
+        .ai-wrapper { position: relative; margin-top: 5px; }
+        .scroll-container { display: flex; gap: 16px; padding: 10px 16px 20px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; scroll-behavior: smooth; }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .card { min-width: 280px; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); scroll-snap-align: start; position: relative; cursor: pointer; }
+        .card-img { width: 100%; height: 140px; object-fit: cover; }
+        .card-badge { position: absolute; top: 10px; left: 10px; background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; z-index: 2; text-transform: capitalize; }
+        .card-body { padding: 12px; }
+        .card-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .card-meta { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 8px; }
+
+        .nav-btn { position: absolute; top: 55%; width: 35px; height: 35px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; color: var(--primary); }
+        .prev { left: 8px; } .next { right: 8px; }
+
+        /* BẢN ĐỒ & SPOTLIGHT */
+        #map { height: 200px; margin: 16px; border-radius: 16px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
+        .spotlight { margin: 16px; padding: 16px; background: white; border-radius: 16px; border-left: 5px solid #f39c12; }
+        .leaflet-tooltip.my-label { background: white; border: none; border-radius: 8px; padding: 5px 10px; font-weight: bold; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+        /* PLACE DETAIL MODAL */
+        .detail-modal { position: fixed; inset: 0; background: white; z-index: 3000; overflow-y: auto; overflow-x: hidden; display: none; transform: translateX(100%); transition: 0.3s ease-in-out; max-width: 414px; margin: 0 auto; height: 100dvh; }
+        .detail-modal.active { transform: translateX(0); display: block; }
+        
+        .dm-header { position: absolute; top: 15px; right: 15px; z-index: 10; }
+        .dm-close { background: rgba(0,0,0,0.5); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; border: none; }
+        
+        .dm-carousel { position: relative; height: 250px; flex-shrink: 0; }
+        .dm-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .dm-img.active { display: block; }
+        .dm-car-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.7); border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: #333; }
+        .dm-car-prev { left: 10px; } .dm-car-next { right: 10px; }
+        .dm-img-counter { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 4px 10px; border-radius: 12px; }
+
+        .dm-body { padding: 20px; display: block; }
+        .dm-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .dm-title { font-size: 22px; font-weight: 800; color: #333; }
+        .dm-rating { font-size: 14px; color: #f39c12; font-weight: bold; margin-top: 5px; text-align: right; min-width: 80px; }
+        .dm-rating span { color: #666; font-size: 12px; font-weight: normal; }
+        
+        .dm-info-list { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
+        .dm-info-item { display: flex; gap: 10px; font-size: 13px; color: #555; align-items: flex-start; }
+        .dm-info-item i { width: 16px; color: var(--primary); margin-top: 3px; }
+
+        .dm-section { padding-top: 20px; border-top: 1px solid #eee; margin-bottom: 20px; position: relative; }
+        .dm-sec-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .dm-desc { font-size: 13px; color: #666; line-height: 1.6; }
+
+        .dm-ai-box { background: #f0f8ff; border: 1px solid #bce0fd; border-radius: 12px; padding: 15px; margin-top: 15px; margin-bottom: 25px; position: relative; }
+        .dm-ai-title { font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+        .dm-procon { display: flex; gap: 15px; }
+        .dm-col { flex: 1; font-size: 12px; }
+        .dm-col ul { padding-left: 15px; margin-top: 5px; color: #555; }
+        .dm-col.pro ul li::marker { color: #2ecc71; }
+        .dm-col.con ul li::marker { color: #e74c3c; }
+
+        .dm-menu-item { display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px dashed #eee; padding: 8px 0; }
+        .dm-menu-item b { color: var(--primary); }
+        .dm-review { background: #f9f9f9; padding: 12px; border-radius: 10px; margin-bottom: 10px; }
+        .dm-rev-user { font-weight: bold; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between;}
+        .dm-rev-text { font-size: 12px; color: #666; font-style: italic; }
+
+        .dm-action-btns { display: flex; gap: 10px; margin-top: 15px; margin-bottom: 25px; padding-top: 10px; }
+        .dm-btn-dir { flex: 1; background: #f0f0f0; border: none; padding: 14px; border-radius: 12px; font-weight: bold; color: #333; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s;}
+        .dm-btn-dir:hover { background: #e0e0e0; }
+        .dm-btn-book { flex: 2; background: linear-gradient(135deg, #1ba0e2, #007bff); border: none; padding: 14px; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s;}
+        .dm-btn-book:hover { filter: brightness(1.1); }
+
+        /* UTILITY GRID CARD */
+        .utility-card { margin: 12px 16px 0; background: white; border-radius: 20px; padding: 18px 16px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .utility-pages { position: relative; }
+        .utility-page { display: none; }
+        .utility-page.active { display: block; }
+        .utility-row { display: flex; justify-content: space-around; margin-bottom: 14px; }
+        .util-item { display: flex; flex-direction: column; align-items: center; gap: 7px; cursor: pointer; flex: 1; min-width: 0; }
+        .util-icon { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; transition: transform 0.15s, box-shadow 0.15s; }
+        .util-icon.sm { width: 42px; height: 42px; font-size: 17px; }
+        .util-item:active .util-icon { transform: scale(0.92); }
+        .util-item span { font-size: 11px; color: #444; font-weight: 500; text-align: center; line-height: 1.3; }
+        .util-dots { display: flex; justify-content: center; gap: 6px; padding-top: 4px; }
+        .util-dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; cursor: pointer; transition: background 0.2s, width 0.2s; }
+        .util-dot.active { background: var(--primary); width: 18px; border-radius: 4px; }
+        .util-swipe-hint { font-size: 10px; color: #bbb; text-align: center; margin-top: 4px; }
+
+        /* HEADER MENU BUTTON */
+        .h-left-group { display: flex; align-items: center; gap: 12px; }
+        .header-menu-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: background 0.2s, transform 0.2s; }
+        .header-menu-btn:hover, .header-menu-btn.open { background: rgba(255,255,255,0.32); }
+        .header-menu-btn.open { transform: rotate(90deg); }
+
+        /* OPTIONS SHEET */
+
+        .options-overlay { position: fixed; inset: 0; z-index: 590; display: none; pointer-events: none; }
+        .options-overlay.show { display: block; pointer-events: auto; }
+        .options-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.2s ease; }
+        .options-overlay.show .options-backdrop { opacity: 1; }
+        /* Dropdown panel from top-left */
+        .options-sheet {
+            position: absolute;
+            top: 58px;                          /* just below header */
+            left: 50%;
+            margin-left: -207px;                /* align to left edge of 414px app */
+            width: 270px;
+            background: white;
+            border-radius: 4px 18px 18px 18px; /* sharp top-left corner = "from button" */
+            padding: 12px 14px 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+            transform-origin: top left;
+            transform: scale(0.85) translateY(-8px);
+            opacity: 0;
+            transition: transform 0.22s cubic-bezier(0.34,1.4,0.64,1), opacity 0.18s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .options-overlay.show .options-sheet { transform: scale(1) translateY(0); opacity: 1; }
+        .opt-handle { display: none; } /* no drag handle needed for dropdown */
+        .opt-title { font-size: 10px; font-weight: 700; color: #bbb; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.6px; padding: 0 2px; }
+        .opt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .opt-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; padding: 8px 2px; border-radius: 12px; transition: background 0.15s; }
+        .opt-item:active { background: #f0f8ff; }
+        .opt-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; }
+        .opt-item span { font-size: 10px; color: #444; font-weight: 500; text-align: center; line-height: 1.3; }
+        .opt-divider { height: 1px; background: #f0f0f0; margin: 10px 0; }
+
+        /* ===== BOOKING FLOW ===== */
+        .booking-modal { position: fixed; inset: 0; background: white; z-index: 3100; max-width: 414px; margin: 0 auto; height: 100dvh; overflow-y: auto; transform: translateY(100vh); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
+        .booking-modal.active { transform: translateY(0); }
+        .bk-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+        .bk-back { background: rgba(255,255,255,0.2); border: none; color: white; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+        .bk-header-title { flex: 1; font-weight: 800; font-size: 16px; }
+        .bk-steps { display: flex; align-items: center; gap: 0; padding: 14px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        .bk-step { display: flex; align-items: center; gap: 6px; flex: 1; }
+        .bk-step-num { width: 26px; height: 26px; border-radius: 50%; background: #ddd; color: #999; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
+        .bk-step.active .bk-step-num { background: var(--primary); color: white; }
+        .bk-step.done .bk-step-num { background: #2ecc71; color: white; }
+        .bk-step-label { font-size: 10px; font-weight: 600; color: #aaa; }
+        .bk-step.active .bk-step-label, .bk-step.done .bk-step-label { color: #333; }
+        .bk-step-line { flex: 0.3; height: 2px; background: #ddd; margin: 0 4px; }
+        .bk-step-line.done { background: #2ecc71; }
+        .bk-body { flex: 1; padding: 20px; overflow-y: auto; }
+        .bk-place-preview { display: flex; gap: 12px; align-items: center; background: #f8f9fa; border-radius: 14px; padding: 12px; margin-bottom: 20px; }
+        .bk-place-img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+        .bk-place-info h4 { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 4px; }
+        .bk-place-info p { font-size: 12px; color: #888; }
+        .bk-field { margin-bottom: 16px; }
+        .bk-label { display: block; font-size: 12px; font-weight: 700; color: #555; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .bk-input { width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 12px; font-size: 13px; font-family: 'Inter',sans-serif; outline: none; transition: border-color 0.2s; background: white; }
+        .bk-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(27,160,226,0.1); }
+        .bk-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .pkg-options { display: flex; flex-direction: column; gap: 10px; }
+        .pkg-opt { border: 2px solid #eee; border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .pkg-opt.selected { border-color: var(--primary); background: #f0f8ff; }
+        .pkg-opt-left h5 { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 3px; }
+        .pkg-opt-left p { font-size: 11px; color: #888; }
+        .pkg-opt-price { font-size: 14px; font-weight: 800; color: var(--primary); }
+        .bk-footer { padding: 16px 20px; border-top: 1px solid #eee; background: white; flex-shrink: 0; }
+        .bk-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .bk-total-label { font-size: 13px; color: #666; }
+        .bk-total-price { font-size: 20px; font-weight: 800; color: #e74c3c; }
+        .bk-btn { width: 100%; background: linear-gradient(135deg,#1ba0e2,#007bff); border: none; color: white; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; transition: filter 0.2s; }
+        .bk-btn:hover { filter: brightness(1.08); }
+        .bk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Review step */
+        .review-section { background: #f8f9fa; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+        .review-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed #eee; }
+        .review-row:last-child { border-bottom: none; }
+        .review-row b { color: #333; }
+        .review-row span { color: #666; }
+        .review-price-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; }
+        .review-total-row { display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; padding-top: 10px; border-top: 2px solid #eee; margin-top: 4px; }
+        /* Payment step */
+        .pay-methods { display: flex; flex-direction: column; gap: 10px; }
+        .pay-method { border: 2px solid #eee; border-radius: 14px; padding: 14px 16px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 14px; }
+        .pay-method.selected { border-color: var(--primary); background: #f0f8ff; }
+        .pay-method-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; flex-shrink: 0; }
+        .pay-method-info h5 { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 2px; }
+        .pay-method-info p { font-size: 11px; color: #888; }
+        .pay-method-radio { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; }
+        .pay-method.selected .pay-method-radio { border-color: var(--primary); }
+        .pay-method.selected .pay-method-radio::after { content:''; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; display: block; }
+        /* Success step */
+        .bk-success { display: flex; flex-direction: column; align-items: center; padding: 30px 20px; text-align: center; }
+        .bk-success-icon { width: 80px; height: 80px; background: linear-gradient(135deg,#2ecc71,#27ae60); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; margin-bottom: 20px; animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .bk-success h3 { font-size: 22px; font-weight: 800; color: #333; margin-bottom: 8px; }
+        .bk-success p { font-size: 13px; color: #888; margin-bottom: 24px; line-height: 1.6; }
+        .bk-code-box { background: #f0f8ff; border: 2px dashed #1ba0e2; border-radius: 16px; padding: 16px 24px; margin-bottom: 24px; }
+        .bk-code-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .bk-code-value { font-size: 24px; font-weight: 800; color: var(--primary); letter-spacing: 3px; }
+        .bk-success-btns { display: flex; gap: 10px; width: 100%; }
+        .bk-s-btn { flex: 1; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
+        .bk-s-btn.outline { background: #f0f0f0; color: #333; }
+        .bk-s-btn.primary { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; }
+
+        /* ===== HISTORY PAGE ===== */
+        .history-modal { position: fixed; inset: 0; background: #f8f9fa; z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
+        .history-modal.active { transform: translateX(0); }
+        .hist-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+        .hist-title { flex: 1; font-weight: 800; font-size: 16px; }
+        .hist-tabs { display: flex; background: white; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        .hist-tab { flex: 1; padding: 13px 6px; text-align: center; font-size: 12px; font-weight: 600; color: #aaa; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
+        .hist-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .hist-list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+        .hist-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.07); cursor: pointer; transition: transform 0.15s; }
+        .hist-card:active { transform: scale(0.98); }
+        .hist-card-img { width: 100%; height: 110px; object-fit: cover; position: relative; }
+        .hist-card-img-wrap { position: relative; }
+        .hist-status { position: absolute; top: 10px; right: 10px; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; }
+        .hist-status.upcoming { background: #e3f9e5; color: #27ae60; }
+        .hist-status.done { background: #eee; color: #777; }
+        .hist-status.cancelled { background: #fde; color: #e74c3c; }
+        .hist-card-body { padding: 12px 14px; }
+        .hist-card-name { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 6px; }
+        .hist-card-meta { display: flex; justify-content: space-between; align-items: center; }
+        .hist-card-date { font-size: 11px; color: #888; display: flex; align-items: center; gap: 5px; }
+        .hist-card-code { font-size: 11px; color: var(--primary); font-weight: 700; font-family: monospace; }
+        .hist-empty { display: flex; flex-direction: column; align-items: center; padding: 60px 20px; color: #bbb; gap: 12px; }
+        .hist-empty i { font-size: 48px; }
+        .hist-empty p { font-size: 14px; font-weight: 500; }
+        /* Itinerary detail */
+        .itinerary-modal { position: fixed; inset: 0; background: white; z-index: 3050; max-width: 414px; margin: 0 auto; height: 100dvh; overflow-y: auto; transform: translateX(100vw); transition: transform 0.3s ease; }
+        .itinerary-modal.active { transform: translateX(0); }
+        .itin-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 10; }
+        .itin-body { padding: 20px; }
+        .itin-booking-info { background: #f0f8ff; border: 1px solid #bce0fd; border-radius: 14px; padding: 16px; margin-bottom: 20px; }
+        .itin-info-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+        .itin-info-row span:first-child { color: #888; }
+        .itin-info-row span:last-child { font-weight: 600; color: #333; }
+        .itin-day { margin-bottom: 24px; }
+        .itin-day-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .itin-day-badge { background: var(--primary); color: white; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .itin-day-date { font-size: 12px; color: #888; }
+        .itin-timeline { position: relative; padding-left: 24px; }
+        .itin-timeline::before { content:''; position: absolute; left: 7px; top: 4px; bottom: 4px; width: 2px; background: #eee; }
+        .itin-event { position: relative; margin-bottom: 16px; }
+        .itin-event::before { content:''; position: absolute; left: -20px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: white; border: 2px solid var(--primary); }
+        .itin-event-time { font-size: 11px; color: var(--primary); font-weight: 700; margin-bottom: 3px; }
+        .itin-event-name { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 2px; }
+        .itin-event-desc { font-size: 12px; color: #888; line-height: 1.4; }
+        .itin-actions { display: flex; gap: 10px; margin-top: 10px; padding-top: 10px; }
+        .itin-btn { flex: 1; padding: 13px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; }
+        .itin-btn.cancel { background: #fde; color: #e74c3c; }
+        .itin-btn.contact { background: #f0f8ff; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div class="main-header">
+        <div class="h-left-group">
+            <div class="h-left" id="userBtn" style="position:relative; cursor:pointer;">
+                <i class="fas fa-user-circle" style="font-size:26px;"></i>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="u-info">
+                        <img src="https://picsum.photos/id/64/100/100" class="u-avt" alt="Avatar">
+                        <h4>Em Bé Đáng Yêu</h4>
+                        <p>Hội Viên: Khách VIP 👑</p>
+                        <div class="u-contact"><i class="fas fa-phone-alt"></i> 0987 654 321</div>
+                        <div class="u-contact"><i class="fas fa-envelope"></i> embenho@gmail.com</div>
+                    </div>
+                    <div class="u-menu">
+                        <div class="u-item" onclick="openHistory()"><i class="fas fa-route"></i> Chuyến đi của tôi</div>
+                        <div class="u-item" onclick="showToast('Thanh toán — Đang phát triển 💳')"><i class="fas fa-credit-card"></i> Thanh toán</div>
+                        <div class="u-item" onclick="showToast('Cài đặt — Đang phát triển ⚙️')"><i class="fas fa-cog"></i> Cài đặt</div>
+                        <div class="u-item" style="color: #e74c3c;" onclick="showToast('Đăng xuất — Đang phát triển 🔒')"><i class="fas fa-sign-out-alt"></i> Đăng xuất</div>
+                    </div>
+                </div>
+            </div>
+            <button class="header-menu-btn" id="optionsFab" onclick="toggleOptions()">
+                <i class="fas fa-bars" id="optsFabIcon"></i>
+            </button>
+        </div>
+
+        <div class="h-mid">LOCAL AI</div>
+
+        <div class="h-right" id="langBtn">
+            VI | EN <i class="fas fa-caret-down"></i>
+            <div class="lang-dropdown" id="langDropdown">
+                <div class="l-item active" onclick="showToast('Đang dùng Tiếng Việt 🇻🇳')">Tiếng Việt 🇻🇳</div>
+                <div class="l-item" onclick="showToast('Chuyển ngôn ngữ — Đang phát triển 🇬🇧')">English 🇬🇧</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UTILITY CARD -->
+    <div class="utility-card" id="utilityCard">
+        <div class="utility-pages" id="utilityPages">
+            <!-- Page 1: Dịch vụ chính -->
+            <div class="utility-page active">
+                <div class="utility-row">
+                    <div class="util-item" onclick="utilityClick('bay')">
+                        <div class="util-icon" style="background:#1ba0e2"><i class="fas fa-plane"></i></div>
+                        <span>Tìm chuyến<br>bay</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('khachsan')">
+                        <div class="util-icon" style="background:#1a3a6c"><i class="fas fa-hotel"></i></div>
+                        <span>Tìm khách<br>sạn</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('hoatdong')">
+                        <div class="util-icon" style="background:#e8715a"><i class="fas fa-hiking"></i></div>
+                        <span>Hoạt động<br>du lịch</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('xekhach')">
+                        <div class="util-icon" style="background:#2ecc71"><i class="fas fa-bus"></i></div>
+                        <span>Vé xe<br>khách</span>
+                    </div>
+                </div>
+                <div class="utility-row">
+                    <div class="util-item" onclick="utilityClick('thuyền')">
+                        <div class="util-icon sm" style="background:#e8715a"><i class="fas fa-ship"></i></div>
+                        <span>Du thuyền</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('combo')">
+                        <div class="util-icon sm" style="background:#9b59b6"><i class="fas fa-layer-group"></i></div>
+                        <span>Combo tiết<br>kiệm</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('tour')">
+                        <div class="util-icon sm" style="background:#e74c3c"><i class="fas fa-route"></i></div>
+                        <span>Tour</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('xe')">
+                        <div class="util-icon sm" style="background:#16a085"><i class="fas fa-car-side"></i></div>
+                        <span>Thuê xe</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('airport')">
+                        <div class="util-icon sm" style="background:#00b894"><i class="fas fa-shuttle-van"></i></div>
+                        <span>Đưa đón<br>sân bay</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Page 2: Trải nghiệm & ẩm thực -->
+            <div class="utility-page">
+                <div class="utility-row">
+                    <div class="util-item" onclick="utilityClick('restaurant')">
+                        <div class="util-icon" style="background:#e67e22"><i class="fas fa-utensils"></i></div>
+                        <span>Nhà hàng<br>đặt bàn</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('spa')">
+                        <div class="util-icon" style="background:#a29bfe"><i class="fas fa-spa"></i></div>
+                        <span>Spa &<br>Wellness</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('show')">
+                        <div class="util-icon" style="background:#fd79a8"><i class="fas fa-music"></i></div>
+                        <span>Show &<br>Sự kiện</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('golf')">
+                        <div class="util-icon" style="background:#00b894"><i class="fas fa-golf-ball"></i></div>
+                        <span>Golf &<br>Thể thao</span>
+                    </div>
+                </div>
+                <div class="utility-row">
+                    <div class="util-item" onclick="utilityClick('visa')">
+                        <div class="util-icon sm" style="background:#0984e3"><i class="fas fa-passport"></i></div>
+                        <span>Dịch vụ<br>Visa</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('baohi')">
+                        <div class="util-icon sm" style="background:#e17055"><i class="fas fa-shield-alt"></i></div>
+                        <span>Bảo hiểm<br>du lịch</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('photo')">
+                        <div class="util-icon sm" style="background:#6c5ce7"><i class="fas fa-camera"></i></div>
+                        <span>Chụp ảnh<br>du lịch</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('simcard')">
+                        <div class="util-icon sm" style="background:#00cec9"><i class="fas fa-sim-card"></i></div>
+                        <span>SIM &<br>WiFi</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('luggage')">
+                        <div class="util-icon sm" style="background:#fdcb6e; filter:brightness(0.85)"><i class="fas fa-suitcase-rolling" style="color:#fff"></i></div>
+                        <span>Gửi hành<br>lý</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Page 3: Deals & Loyalty -->
+            <div class="utility-page">
+                <div class="utility-row">
+                    <div class="util-item" onclick="utilityClick('voucher')">
+                        <div class="util-icon" style="background:#e74c3c"><i class="fas fa-ticket-alt"></i></div>
+                        <span>Voucher<br>Hot</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('loyalty')">
+                        <div class="util-icon" style="background:#f39c12"><i class="fas fa-crown"></i></div>
+                        <span>Hội viên<br>VIP</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('deals')">
+                        <div class="util-icon" style="background:#27ae60"><i class="fas fa-tags"></i></div>
+                        <span>Flash<br>Deals</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('gift')">
+                        <div class="util-icon" style="background:#e91e8c"><i class="fas fa-gift"></i></div>
+                        <span>Quà tặng<br>& Ưu đãi</span>
+                    </div>
+                </div>
+                <div class="utility-row">
+                    <div class="util-item" onclick="utilityClick('topup')">
+                        <div class="util-icon sm" style="background:#1ba0e2"><i class="fas fa-wallet"></i></div>
+                        <span>Nạp<br>ví</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('referral')">
+                        <div class="util-icon sm" style="background:#9b59b6"><i class="fas fa-user-plus"></i></div>
+                        <span>Giới thiệu<br>bạn bè</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('cashback')">
+                        <div class="util-icon sm" style="background:#e67e22"><i class="fas fa-undo-alt"></i></div>
+                        <span>Hoàn tiền</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('partner')">
+                        <div class="util-icon sm" style="background:#2c3e50"><i class="fas fa-handshake"></i></div>
+                        <span>Đối tác<br>liên kết</span>
+                    </div>
+                    <div class="util-item" onclick="utilityClick('support')">
+                        <div class="util-icon sm" style="background:#00b894"><i class="fas fa-headset"></i></div>
+                        <span>Hỗ trợ<br>24/7</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="util-dots" id="utilDots">
+            <span class="util-dot active" onclick="goUtilPage(0)"></span>
+            <span class="util-dot" onclick="goUtilPage(1)"></span>
+            <span class="util-dot" onclick="goUtilPage(2)"></span>
+        </div>
+    </div>
+
+    <div class="planner-box">
+        <div class="planner-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-map-marked-alt" style="color:#1ba0e2"></i> Plan Your Trip
+            </div>
+            <div id="collapsePlannerBtn" style="display: none; font-size: 12px; font-weight: 600; color: #e74c3c; cursor: pointer; padding: 5px;" onclick="collapsePlanner()">
+                <i class="fas fa-times"></i> Đóng lại
+            </div>
+        </div>
+        
+        <div class="p-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+            <label class="p-label">Where are you going?</label>
+            <select class="p-input" id="planCitySelect" onchange="checkDest()">
+                <option value="" selected disabled>Chọn thành phố...</option>
+                <option value="Đà Nẵng">Đà Nẵng</option>
+                <option value="Hà Nội">Hà Nội</option>
+                <option value="Sài Gòn">Sài Gòn</option>
+                <option value="Đà Lạt">Đà Lạt</option>
+                <option value="Phú Quốc">Phú Quốc</option>
+            </select>
+        </div>
+
+        <div id="plannerDetails">
+            
+            <div class="p-section">
+                <label class="p-label">When?</label>
+                <div class="p-grid-2">
+                    <div>
+                        <input type="date" id="dateStart" class="p-input" onchange="calcDays()">
+                        <div style="font-size:11px; color:#999; margin-top:3px;">Start</div>
+                    </div>
+                    <div>
+                        <input type="date" id="dateEnd" class="p-input" onchange="calcDays()">
+                        <div style="font-size:11px; color:#999; margin-top:3px;">End</div>
+                    </div>
+                </div>
+                <div id="dateCalc" style="font-size:12px; color:#555; margin-top:8px; font-weight: 500;">(0 nights, 0 days)</div>
+            </div>
+
+            <div class="p-section">
+                <label class="p-label">Who's going?</label>
+                <div class="p-radio-group">
+                    <label><input type="radio" name="who" value="Solo"> Solo</label>
+                    <label><input type="radio" name="who" value="Couple"> Couple</label>
+                    <label><input type="radio" name="who" value="Family" checked> Family</label>
+                    <label><input type="radio" name="who" value="Friends"> Friends (group)</label>
+                </div>
+                <input type="text" id="whoDetails" class="p-input" placeholder="VD: 2 Adults, 1 Child">
+            </div>
+
+            <div class="p-section">
+                <label class="p-label">What's your budget?</label>
+                <div class="slider-container">
+                    <input type="range" id="planBudget" min="5000000" max="50000000" step="1000000" value="15000000" oninput="formatPlanBudget(this.value)">
+                    <div class="slider-labels">
+                        <span>5M</span><span>10M</span><span>50M VND</span>
+                    </div>
+                    <div style="font-size: 13px; color: #333; margin-top: 5px;">Selected: <b id="valBudgetStr">15,000,000 VND</b></div>
+                </div>
+            </div>
+
+            <div class="p-section">
+                <label class="p-label">What do you enjoy? (Select all)</label>
+                <div class="p-check-group">
+                    <label><input type="checkbox"> Beach & Nature</label>
+                    <label><input type="checkbox"> Local Food</label>
+                    <label><input type="checkbox"> Adventure</label>
+                    <label><input type="checkbox"> Culture</label>
+                    <label><input type="checkbox"> Shopping</label>
+                    <label><input type="checkbox"> Nightlife</label>
+                </div>
+            </div>
+
+            <div class="p-section">
+                <label class="p-label">Any must-visit places?</label>
+                <div class="mv-add-box">
+                    <input type="text" id="mvInput" class="p-input" placeholder="+ Add destination">
+                    <button class="btn-add" onclick="addMustVisit()">+</button>
+                </div>
+                <div id="mvList" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+
+            <button class="btn-plan" onclick="showToast('Generate AI Itinerary — Đang phát triển 🧠✨')">
+                <i class="fas fa-brain"></i> Generate AI Itinerary
+            </button>
+            
+        </div>
+    </div>
+
+    <div class="ai-wrapper">
+        <h3 style="padding: 0 16px;">LOCAL AI PICK FOR YOU ✨</h3>
+        
+        <div class="city-search-box">
+            <i class="fas fa-map-marker-alt"></i>
+            <input type="text" id="aiCitySearch" placeholder="Tìm thành phố (VD: Sài Gòn, Hà Nội...)" autocomplete="off">
+            <div id="citySuggestions" class="city-sugg-box"></div>
+        </div>
+
+        <div class="filter-category-bar">
+            <div class="cat-pill active" onclick="filterByCat('all', this)"><i class="fas fa-th-large"></i> <span>Tất cả</span></div>
+            <div class="cat-pill" onclick="filterByCat('Ẩm thực', this)"><i class="fas fa-utensils"></i> <span>Ẩm thực</span></div>
+            <div class="cat-pill" onclick="filterByCat('Lưu trú', this)"><i class="fas fa-bed"></i> <span>Lưu trú</span></div>
+            <div class="cat-pill" onclick="filterByCat('Trải nghiệm', this)"><i class="fas fa-star"></i> <span>Trải nghiệm</span></div>
+        </div>
+        <div class="nav-btn prev" onclick="scrollAi(-1)"><i class="fas fa-chevron-left"></i></div>
+        <div class="nav-btn next" onclick="scrollAi(1)"><i class="fas fa-chevron-right"></i></div>
+        <div class="scroll-container" id="aiList"></div>
+    </div>
+
+    <h3 style="padding: 0 16px; margin-top: 10px;">Nearby Location 📍</h3>
+    <div id="map"></div>
+
+    <div class="spotlight">
+        <h4 style="color:#f39c12">Cultural Spotlight</h4>
+        <p style="font-size: 12px; color: #666; margin-top: 5px;">Hôm nay có lễ hội tại trung tâm đó bé ơi! 🥰</p>
+    </div>
+</div>
+
+<div class="detail-modal" id="placeDetail">
+    <div class="dm-header">
+        <button class="dm-close" onclick="closeDetail()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dm-carousel" id="dmCarousel"></div>
+    <div class="dm-body">
+        <div class="dm-title-row">
+            <div>
+                <div class="dm-title" id="dmName">Tên Quán</div>
+                <div class="card-badge" style="position:relative; top:0; left:0; display:inline-block; margin-top:5px;" id="dmCat">Ẩm thực</div>
+            </div>
+            <div class="dm-rating">⭐ <span id="dmRateNum" style="color:#f39c12; font-size: 16px; font-weight:bold;">4.8</span> <br><span id="dmRevCount">(120 đánh giá)</span></div>
+        </div>
+        <div class="dm-info-list">
+            <div class="dm-info-item"><i class="fas fa-map-marker-alt"></i> <span id="dmAddr">Địa chỉ</span></div>
+            <div class="dm-info-item"><i class="far fa-clock"></i> <span id="dmHours">Giờ mở cửa</span></div>
+            <div class="dm-info-item"><i class="fas fa-phone-alt"></i> <span id="dmPhone">Số điện thoại</span></div>
+        </div>
+        <div class="dm-section">
+            <div class="dm-sec-title">Về địa điểm này 📝</div>
+            <div class="dm-desc" id="dmDesc">Đoạn mô tả ngắn gọn về quán...</div>
+        </div>
+        <div class="dm-ai-box">
+            <div class="dm-ai-title"><i class="fas fa-robot"></i> AI Summary Insights</div>
+            <div class="dm-procon">
+                <div class="dm-col pro"><b>Ưu điểm:</b><ul id="dmPros"></ul></div>
+                <div class="dm-col con"><b>Nhược điểm:</b><ul id="dmCons"></ul></div>
+            </div>
+        </div>
+        <div class="dm-section" id="dmMenuSec" style="display: none;">
+            <div class="dm-sec-title">Menu Nổi Bật 🍽️</div>
+            <div id="dmMenuBox"></div>
+        </div>
+        <div class="dm-section">
+            <div class="dm-sec-title">Review từ người dùng 🗣️</div>
+            <div id="dmReviewBox"></div>
+        </div>
+        <div class="dm-action-btns">
+            <button class="dm-btn-dir" onclick="showToast('Chỉ đường — Đang phát triển 🗺️')"><i class="fas fa-directions"></i> Chỉ đường</button>
+            <button class="dm-btn-book" id="dmBookBtn" onclick="openBooking(currentDetailId)"><i class="fas fa-calendar-check"></i> Đặt Ngay</button>
+        </div>
+        <div class="dm-section">
+            <div class="dm-sec-title">Gợi ý tương tự 🎯</div>
+            <div class="scroll-container" id="dmSimilar" style="padding: 10px 0;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- OPTIONS OVERLAY (bottom sheet) -->
+<div class="options-overlay" id="optionsOverlay" onclick="handleOverlayClick(event)">
+    <div class="options-backdrop"></div>
+    <div class="options-sheet">
+        <div class="opt-handle"></div>
+        <div class="opt-title">Khám phá</div>
+        <div class="opt-grid">
+            <div class="opt-item" onclick="optionNav('home')">
+                <div class="opt-icon" style="background:#1ba0e2"><i class="fas fa-home"></i></div>
+                <span>Trang chủ</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('search')">
+                <div class="opt-icon" style="background:#9b59b6"><i class="fas fa-search"></i></div>
+                <span>Tìm kiếm</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('booking')">
+                <div class="opt-icon" style="background:#e67e22"><i class="fas fa-calendar-check"></i></div>
+                <span>Đặt chỗ</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('voucher')">
+                <div class="opt-icon" style="background:#e74c3c"><i class="fas fa-ticket-alt"></i></div>
+                <span>Voucher</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('map')">
+                <div class="opt-icon" style="background:#27ae60"><i class="fas fa-map-marked-alt"></i></div>
+                <span>Bản đồ</span>
+            </div>
+            <div class="opt-item" onclick="toggleOptions(); openHistory()">
+                <div class="opt-icon" style="background:#3498db"><i class="fas fa-route"></i></div>
+                <span>Chuyến đi</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('loyalty')">
+                <div class="opt-icon" style="background:#f39c12"><i class="fas fa-crown"></i></div>
+                <span>Hội viên</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('notifications')">
+                <div class="opt-icon" style="background:#e91e8c"><i class="fas fa-bell"></i></div>
+                <span>Thông báo</span>
+            </div>
+        </div>
+        <div class="opt-divider"></div>
+        <div class="opt-title">Hỗ trợ</div>
+        <div class="opt-grid">
+            <div class="opt-item" onclick="optionNav('merchant')">
+                <div class="opt-icon" style="background:#2c3e50"><i class="fas fa-store"></i></div>
+                <span>Merchant</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('support')">
+                <div class="opt-icon" style="background:#00b894"><i class="fas fa-headset"></i></div>
+                <span>Hỗ trợ</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('settings')">
+                <div class="opt-icon" style="background:#636e72"><i class="fas fa-cog"></i></div>
+                <span>Cài đặt</span>
+            </div>
+            <div class="opt-item" onclick="optionNav('about')">
+                <div class="opt-icon" style="background:#a29bfe"><i class="fas fa-info-circle"></i></div>
+                <span>Về chúng tôi</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== BOOKING FLOW MODAL ===== -->
+<div class="booking-modal" id="bookingModal">
+    <div class="bk-header">
+        <button class="bk-back" onclick="closeBooking()"><i class="fas fa-arrow-left"></i></button>
+        <div class="bk-header-title" id="bkHeaderTitle">Đặt dịch vụ</div>
+    </div>
+    <!-- Step indicators -->
+    <div class="bk-steps">
+        <div class="bk-step active" id="bkStepEl1">
+            <div class="bk-step-num">1</div>
+            <div class="bk-step-label">Thông tin</div>
+        </div>
+        <div class="bk-step-line" id="bkLine1"></div>
+        <div class="bk-step" id="bkStepEl2">
+            <div class="bk-step-num">2</div>
+            <div class="bk-step-label">Xem lại</div>
+        </div>
+        <div class="bk-step-line" id="bkLine2"></div>
+        <div class="bk-step" id="bkStepEl3">
+            <div class="bk-step-num">3</div>
+            <div class="bk-step-label">Thanh toán</div>
+        </div>
+        <div class="bk-step-line" id="bkLine3"></div>
+        <div class="bk-step" id="bkStepEl4">
+            <div class="bk-step-num">4</div>
+            <div class="bk-step-label">Xác nhận</div>
+        </div>
+    </div>
+    <!-- Step bodies -->
+    <div class="bk-body" id="bkBodyWrap">
+
+        <!-- STEP 1: Info form -->
+        <div id="bkStep1">
+            <div class="bk-place-preview" id="bkPlacePreview"></div>
+
+            <div class="bk-field">
+                <label class="bk-label">Chọn gói dịch vụ</label>
+                <div class="pkg-options" id="pkgOptions"></div>
+            </div>
+
+            <div class="bk-row2">
+                <div class="bk-field">
+                    <label class="bk-label">Ngày đi</label>
+                    <input type="date" class="bk-input" id="bkDate">
+                </div>
+                <div class="bk-field">
+                    <label class="bk-label">Giờ khởi hành</label>
+                    <select class="bk-input" id="bkTime">
+                        <option>07:00</option><option>08:30</option><option>09:00</option>
+                        <option>10:00</option><option>13:00</option><option>14:00</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bk-row2">
+                <div class="bk-field">
+                    <label class="bk-label">Người lớn</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button onclick="adjustGuests('adult',-1)" style="width:34px;height:34px;border-radius:8px;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;font-weight:bold;color:#555;">−</button>
+                        <span id="adultCount" style="font-size:15px;font-weight:700;min-width:20px;text-align:center;">2</span>
+                        <button onclick="adjustGuests('adult',1)" style="width:34px;height:34px;border-radius:8px;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;font-weight:bold;color:#555;">+</button>
+                    </div>
+                </div>
+                <div class="bk-field">
+                    <label class="bk-label">Trẻ em</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button onclick="adjustGuests('child',-1)" style="width:34px;height:34px;border-radius:8px;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;font-weight:bold;color:#555;">−</button>
+                        <span id="childCount" style="font-size:15px;font-weight:700;min-width:20px;text-align:center;">0</span>
+                        <button onclick="adjustGuests('child',1)" style="width:34px;height:34px;border-radius:8px;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;font-weight:bold;color:#555;">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bk-field">
+                <label class="bk-label">Yêu cầu đặc biệt</label>
+                <textarea class="bk-input" id="bkNote" rows="3" placeholder="VD: Cần hướng dẫn viên tiếng Anh, ăn chay..."></textarea>
+            </div>
+        </div>
+
+        <!-- STEP 2: Review -->
+        <div id="bkStep2" style="display:none;">
+            <div class="review-section">
+                <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:10px;">Chi tiết đặt chỗ</div>
+                <div class="review-row"><b>Dịch vụ</b><span id="rv_name"></span></div>
+                <div class="review-row"><b>Gói</b><span id="rv_pkg"></span></div>
+                <div class="review-row"><b>Ngày đi</b><span id="rv_date"></span></div>
+                <div class="review-row"><b>Giờ</b><span id="rv_time"></span></div>
+                <div class="review-row"><b>Người lớn</b><span id="rv_adult"></span></div>
+                <div class="review-row"><b>Trẻ em</b><span id="rv_child"></span></div>
+                <div class="review-row"><b>Ghi chú</b><span id="rv_note" style="max-width:55%;text-align:right;"></span></div>
+            </div>
+            <div class="review-section">
+                <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:10px;">Chi tiết giá</div>
+                <div class="review-price-row"><span id="rv_adult_label"></span><span id="rv_adult_price"></span></div>
+                <div class="review-price-row" id="rv_child_row"><span id="rv_child_label"></span><span id="rv_child_price"></span></div>
+                <div class="review-price-row"><span style="color:#27ae60;font-size:12px;"><i class="fas fa-tag"></i> Giảm 5% thành viên</span><span id="rv_discount" style="color:#27ae60;"></span></div>
+                <div class="review-total-row"><span>Tổng cộng</span><span id="rv_total" style="color:#e74c3c;"></span></div>
+            </div>
+            <div style="background:#fffbec;border:1px solid #f39c12;border-radius:12px;padding:12px;font-size:12px;color:#7d6008;display:flex;gap:8px;">
+                <i class="fas fa-info-circle" style="margin-top:2px;flex-shrink:0;"></i>
+                <span>Miễn phí hủy trước <b>48 giờ</b> khởi hành. Sau thời gian này, hoàn 50% giá trị booking.</span>
+            </div>
+        </div>
+
+        <!-- STEP 3: Payment -->
+        <div id="bkStep3" style="display:none;">
+            <div style="font-size:15px;font-weight:700;color:#333;margin-bottom:16px;">Chọn phương thức thanh toán</div>
+            <div class="pay-methods">
+                <div class="pay-method selected" onclick="selectPayMethod(this)">
+                    <div class="pay-method-icon" style="background:#e74c3c"><i class="fas fa-credit-card"></i></div>
+                    <div class="pay-method-info"><h5>Thẻ tín dụng / ghi nợ</h5><p>Visa, Mastercard, JCB</p></div>
+                    <div class="pay-method-radio"></div>
+                </div>
+                <div class="pay-method" onclick="selectPayMethod(this)">
+                    <div class="pay-method-icon" style="background:#1ba0e2"><i class="fas fa-university"></i></div>
+                    <div class="pay-method-info"><h5>Chuyển khoản ngân hàng</h5><p>ATM nội địa / Internet Banking</p></div>
+                    <div class="pay-method-radio"></div>
+                </div>
+                <div class="pay-method" onclick="selectPayMethod(this)">
+                    <div class="pay-method-icon" style="background:#f39c12"><i class="fas fa-wallet"></i></div>
+                    <div class="pay-method-info"><h5>Ví LocalAI</h5><p>Số dư: 1,250,000đ</p></div>
+                    <div class="pay-method-radio"></div>
+                </div>
+                <div class="pay-method" onclick="selectPayMethod(this)">
+                    <div class="pay-method-icon" style="background:#27ae60"><i class="fas fa-money-bill-wave"></i></div>
+                    <div class="pay-method-info"><h5>Thanh toán tiền mặt</h5><p>Thanh toán khi nhận dịch vụ</p></div>
+                    <div class="pay-method-radio"></div>
+                </div>
+            </div>
+            <div style="margin-top:20px; background:#f8f9fa; border-radius:12px; padding:16px;">
+                <div class="review-total-row" style="margin-top:0; border-top:none; padding-top:0;">
+                    <span style="font-size:13px; color:#555;">Tổng thanh toán</span>
+                    <span id="pay_total" style="color:#e74c3c; font-size:18px;"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: Success -->
+        <div id="bkStep4" style="display:none;">
+            <div class="bk-success">
+                <div class="bk-success-icon"><i class="fas fa-check"></i></div>
+                <h3>Đặt chỗ thành công! 🎉</h3>
+                <p>Cảm ơn bạn đã tin tưởng LocalAI.<br>Xác nhận đã được gửi qua email và SMS.</p>
+                <div class="bk-code-box">
+                    <div class="bk-code-label">Mã đặt chỗ của bạn</div>
+                    <div class="bk-code-value" id="bkConfirmCode">LAI-XXXX</div>
+                </div>
+                <div class="bk-success-btns">
+                    <button class="bk-s-btn outline" onclick="closeBooking()"><i class="fas fa-home"></i> Trang chủ</button>
+                    <button class="bk-s-btn primary" onclick="closeBooking(); openHistory()"><i class="fas fa-route"></i> Xem chuyến đi</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- Sticky footer -->
+    <div class="bk-footer" id="bkFooter">
+        <div class="bk-total-row">
+            <span class="bk-total-label">Tổng cộng</span>
+            <span class="bk-total-price" id="bkTotalDisplay">0đ</span>
+        </div>
+        <button class="bk-btn" id="bkNextBtn" onclick="bkNext()">Tiếp tục <i class="fas fa-arrow-right"></i></button>
+    </div>
+</div>
+
+<!-- ===== HISTORY PAGE ===== -->
+<div class="history-modal" id="historyModal">
+    <div class="hist-header">
+        <button class="bk-back" onclick="closeHistory()"><i class="fas fa-arrow-left"></i></button>
+        <div class="hist-title">Chuyến đi của tôi</div>
+    </div>
+    <div class="hist-tabs">
+        <div class="hist-tab active" onclick="switchHistTab(0,this)">Sắp tới</div>
+        <div class="hist-tab" onclick="switchHistTab(1,this)">Hoàn thành</div>
+        <div class="hist-tab" onclick="switchHistTab(2,this)">Đã huỷ</div>
+    </div>
+    <div class="hist-list" id="histList"></div>
+</div>
+
+<!-- ===== ITINERARY DETAIL ===== -->
+<div class="itinerary-modal" id="itineraryModal">
+    <div class="itin-header">
+        <button class="bk-back" onclick="closeItinerary()"><i class="fas fa-arrow-left"></i></button>
+        <div class="hist-title" id="itinTitle">Chi tiết chuyến đi</div>
+    </div>
+    <div class="itin-body">
+        <div class="itin-booking-info" id="itinInfoBox"></div>
+        <div id="itinDays"></div>
+        <div class="itin-actions" id="itinActionsBox"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // JS Header
+    const uBtn = document.getElementById('userBtn'), uDrop = document.getElementById('userDropdown');
+    const lBtn = document.getElementById('langBtn'), lDrop = document.getElementById('langDropdown');
+
+    let optionsOpen = false; // declared early so global click handler can reference it
+
+    uBtn.onclick = function(e) { e.stopPropagation(); uDrop.classList.toggle('show'); lDrop.classList.remove('show'); };
+    lBtn.onclick = function(e) { e.stopPropagation(); lDrop.classList.toggle('show'); uDrop.classList.remove('show'); };
+    uDrop.onclick = function(e) { e.stopPropagation(); }; lDrop.onclick = function(e) { e.stopPropagation(); };
+    
+    window.addEventListener('click', function(e) {
+        uDrop.classList.remove('show'); lDrop.classList.remove('show');
+        if (e.target.id !== 'aiCitySearch') document.getElementById('citySuggestions').style.display = 'none';
+        // Close options dropdown if click is outside
+        if (optionsOpen && !e.target.closest('#optionsOverlay') && !e.target.closest('#optionsFab')) {
+            optionsOpen = false;
+            document.getElementById('optionsOverlay').classList.remove('show');
+            document.getElementById('optionsFab').classList.remove('open');
+        }
+    });
+
+    // JS Planner Form Thu gọn
+    function checkDest() {
+        const dest = document.getElementById('planCitySelect').value;
+        const details = document.getElementById('plannerDetails');
+        const closeBtn = document.getElementById('collapsePlannerBtn');
+
+        if (dest !== "") {
+            details.style.display = 'block';
+            setTimeout(() => { details.style.opacity = 1; }, 10);
+            closeBtn.style.display = 'block';
+            
+            document.getElementById('mvList').innerHTML = "";
+            if(dest === 'Đà Nẵng') {
+                addMustVisitTag('Bà Nà Hills');
+                addMustVisitTag('Cầu Rồng');
+            }
+        }
+    }
+
+    window.collapsePlanner = function() {
+        const details = document.getElementById('plannerDetails');
+        const closeBtn = document.getElementById('collapsePlannerBtn');
+        const citySelect = document.getElementById('planCitySelect');
+        
+        details.style.opacity = 0;
+        setTimeout(() => { details.style.display = 'none'; }, 400);
+        closeBtn.style.display = 'none';
+        citySelect.value = ""; 
+    };
+
+    function calcDays() {
+        const start = document.getElementById('dateStart').value;
+        const end = document.getElementById('dateEnd').value;
+        if(start && end) {
+            const d1 = new Date(start), d2 = new Date(end);
+            const diffTime = d2 - d1;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if(diffDays > 0) {
+                document.getElementById('dateCalc').innerText = `(${diffDays} nights, ${diffDays + 1} days)`;
+                document.getElementById('dateCalc').style.color = "#555";
+            } else {
+                document.getElementById('dateCalc').innerText = `(End date must be after start date!)`;
+                document.getElementById('dateCalc').style.color = "#e74c3c";
+            }
+        }
+    }
+
+    function formatPlanBudget(val) { document.getElementById('valBudgetStr').innerText = parseInt(val).toLocaleString('en-US') + " VND"; }
+
+    function addMustVisit() {
+        const input = document.getElementById('mvInput');
+        const val = input.value.trim();
+        if(val) { addMustVisitTag(val); input.value = ""; }
+    }
+    
+    function addMustVisitTag(name) {
+        const list = document.getElementById('mvList');
+        const tag = document.createElement('div');
+        tag.className = 'mv-tag';
+        tag.innerHTML = `<span>• ${name}</span> <i class="fas fa-times" onclick="this.parentElement.remove()"></i>`;
+        list.appendChild(tag);
+    }
+    
+    document.getElementById('mvInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') addMustVisit(); });
+
+    // DATABASE 75 ĐỊA ĐIỂM 
+    const allPlaces = [
+        { id: 1, n: "Bánh Mì Huỳnh Hoa", city: "Sài Gòn", c: "Ẩm thực", p: 65000, r: 4.8, d: 1.2, revCount: 8900, images: ["https://picsum.photos/id/1080/400/250", "https://picsum.photos/id/431/400/250"], addr: "26 Lê Thị Riêng, Quận 1", hours: "13:00 - 23:00", phone: "028 3925 0885", desc: "Tiệm bánh mì 'huyền thoại' ngập ngụa chả lụa, thịt nguội, pate béo ngậy.", pros: ["Pate siêu đỉnh", "Nhân ú nu"], cons: ["Giá hơi chát", "Hay phải xếp hàng"], menu: [{name: "Bánh mì đặc biệt", price: "65,000đ"}], reviews: [{user: "Bảo Nhi", rate: 5, text: "Ăn 1 ổ no tới chiều luôn!"}] },
+        { id: 2, n: "Cơm Tấm Ba Ghiền", city: "Sài Gòn", c: "Ẩm thực", p: 80000, r: 4.6, d: 3.5, revCount: 4200, images: ["https://picsum.photos/id/292/400/250"], addr: "84 Đặng Văn Ngữ, Phú Nhuận", hours: "07:00 - 22:00", phone: "028 3845 0000", desc: "Miếng sườn to chà bá che lấp cả dĩa cơm, ướp đậm đà nướng than hoa thơm lừng.", pros: ["Sườn siêu to", "Nước mắm kẹo ngon"], cons: ["Quán hơi nóng"], menu: [{name: "Cơm sườn bì chả", price: "85,000đ"}], reviews: [{user: "Minh Tuấn", rate: 5, text: "Sườn ở đây to bằng cái mặt tui luôn á."}] },
+        { id: 3, n: "Ốc Đào", city: "Sài Gòn", c: "Ẩm thực", p: 150000, r: 4.5, d: 2.1, revCount: 3100, images: ["https://picsum.photos/id/225/400/250"], addr: "Hẻm 212B Nguyễn Trãi, Quận 1", hours: "10:00 - 22:30", phone: "090 999 9999", desc: "Quán ốc núp hẻm nhưng lúc nào cũng đông khách, hải sản tươi sống nêm nếm đậm vị.", pros: ["Ốc tươi", "Menu đa dạng"], cons: ["Hẻm khó tìm"], menu: [{name: "Ốc hương xào bơ tỏi", price: "120,000đ"}], reviews: [{user: "Thảo My", rate: 4, text: "Sốt bơ tỏi chấm bánh mì là nhức nách."}] },
+        { id: 4, n: "Phở Lệ", city: "Sài Gòn", c: "Ẩm thực", p: 70000, r: 4.7, d: 4.0, revCount: 5500, images: ["https://picsum.photos/id/431/400/250"], addr: "413 Nguyễn Trãi, Quận 5", hours: "06:00 - 01:00", phone: "028 3923 4008", desc: "Phở chuẩn vị Nam Cực đậm đà, nước lèo ngọt thanh từ xương bò hầm nhiều giờ.", pros: ["Nước lèo ngon", "Thịt bò mềm"], cons: ["Không gian hơi ồn"], menu: [{name: "Phở tái nạm", price: "70,000đ"}], reviews: [{user: "Quốc Anh", rate: 5, text: "Phở Lệ thì khỏi bàn, ăn từ nhỏ tới lớn."}] },
+        { id: 5, n: "Dimsum Tiến Phát", city: "Sài Gòn", c: "Ẩm thực", p: 100000, r: 4.6, d: 5.2, revCount: 2800, images: ["https://picsum.photos/id/102/400/250"], addr: "18 Ký Hòa, Quận 5", hours: "06:00 - 12:30", phone: "028 3853 6217", desc: "Chuẩn vị khu Chợ Lớn, há cảo xíu mại tươi rói làm tại chỗ.", pros: ["Chuẩn vị Hoa", "Giá hạt dẻ"], cons: ["Chỉ bán buổi sáng"], menu: [{name: "Há cảo tôm", price: "45,000đ"}], reviews: [{user: "Gia Bảo", rate: 4, text: "Phải đi sớm mới còn bàn nha mọi người."}] },
+        { id: 6, n: "Landmark 81 SkyView", city: "Sài Gòn", c: "Trải nghiệm", p: 810000, r: 4.9, d: 2.5, revCount: 15420, images: ["https://picsum.photos/id/122/400/250"], addr: "720A Điện Biên Phủ, Bình Thạnh", hours: "08:30 - 22:00", phone: "028 3822 5959", desc: "Tòa nhà cao nhất Việt Nam, đài quan sát kính trong suốt ngắm trọn thành phố.", pros: ["View sống ảo xịn", "Sang chảnh"], cons: ["Vé đắt", "Cuối tuần chờ thang máy lâu"], menu: null, reviews: [{user: "Minh Anh", rate: 5, text: "Chụp 1000 tấm ảnh chưa hết góc đẹp."}] },
+        { id: 7, n: "Thảo Cầm Viên", city: "Sài Gòn", c: "Trải nghiệm", p: 60000, r: 4.7, d: 1.5, revCount: 12000, images: ["https://picsum.photos/id/10/400/250"], addr: "2 Nguyễn Bỉnh Khiêm, Quận 1", hours: "07:00 - 17:30", phone: "028 3829 1425", desc: "Lá phổi xanh của thành phố, nơi lý tưởng để đi dạo, cắm trại.", pros: ["Không gian xanh mát", "Vé siêu rẻ"], cons: ["Nắng nóng vào buổi trưa"], menu: null, reviews: [{user: "Tuấn Hưng", rate: 5, text: "Chỗ hẹn hò lý tưởng cho sinh viên tụi mình."}] },
+        { id: 8, n: "Bảo Tàng Mỹ Thuật", city: "Sài Gòn", c: "Trải nghiệm", p: 30000, r: 4.8, d: 0.8, revCount: 6700, images: ["https://picsum.photos/id/20/400/250"], addr: "97A Phó Đức Chính, Quận 1", hours: "08:00 - 17:00", phone: "028 3829 4441", desc: "Kiến trúc Pháp cổ điển kết hợp Đông Dương, thiên đường sống ảo.", pros: ["Kiến trúc đẹp", "Nhiều góc chụp hình"], cons: ["Không có máy lạnh"], menu: null, reviews: [{user: "Linh Chi", rate: 4, text: "Mặc áo dài ra đây chụp hình là hết sẩy."}] },
+        { id: 9, n: "Bến Bạch Đằng", city: "Sài Gòn", c: "Trải nghiệm", p: 0, r: 4.6, d: 1.0, revCount: 8900, images: ["https://picsum.photos/id/30/400/250"], addr: "Đường Tôn Đức Thắng, Quận 1", hours: "Cả ngày", phone: "Không có", desc: "Công viên ven sông lộng gió, ngắm du thuyền và Landmark 81 cực chill về đêm.", pros: ["Free hoàn toàn", "View sông mát mẻ"], cons: ["Khó gửi xe"], menu: null, reviews: [{user: "Đức Trí", rate: 5, text: "Tối ra đây hóng gió uống trà chanh là chuẩn bài."}] },
+        { id: 10, n: "Dinh Độc Lập", city: "Sài Gòn", c: "Trải nghiệm", p: 40000, r: 4.8, d: 0.5, revCount: 14000, images: ["https://picsum.photos/id/40/400/250"], addr: "135 Nam Kỳ Khởi Nghĩa, Quận 1", hours: "08:00 - 16:30", phone: "028 3822 3652", desc: "Biểu tượng lịch sử hào hùng, khuôn viên rộng lớn xanh mướt.", pros: ["Mang ý nghĩa lịch sử", "Khuôn viên đẹp"], cons: ["Cuối tuần rất đông đoàn khách"], menu: null, reviews: [{user: "Hải Yến", rate: 5, text: "Rất đáng để tham quan tìm hiểu lịch sử."}] },
+        { id: 11, n: "Vinpearl Landmark 81", city: "Sài Gòn", c: "Lưu trú", p: 3500000, r: 4.9, d: 2.5, revCount: 3200, images: ["https://picsum.photos/id/50/400/250"], addr: "720A Điện Biên Phủ, Bình Thạnh", hours: "Mở 24/7", phone: "028 3971 8888", desc: "Khách sạn 5 sao cao nhất Việt Nam, ngắm mây trôi ngang cửa sổ phòng ngủ.", pros: ["View toàn thành phố đỉnh cao", "Dịch vụ 5 sao"], cons: ["Giá thành cao"], menu: null, reviews: [{user: "Khánh Vy", rate: 5, text: "Trải nghiệm như ở trên mây thực sự!"}] },
+        { id: 12, n: "The Reverie Saigon", city: "Sài Gòn", c: "Lưu trú", p: 5000000, r: 4.9, d: 0.2, revCount: 1800, images: ["https://picsum.photos/id/60/400/250"], addr: "22-36 Nguyễn Huệ, Quận 1", hours: "Mở 24/7", phone: "028 3823 6688", desc: "Cung điện hoàng gia Ý giữa lòng Sài Gòn, dát vàng khắp mọi nơi.", pros: ["Nội thất siêu sang trọng", "Nằm ngay phố đi bộ"], cons: ["Chỉ dành cho rich kid"], menu: null, reviews: [{user: "Hoàng Quân", rate: 5, text: "Đắt xắt ra miếng, nhân viên phục vụ như hoàng gia."}] },
+        { id: 13, n: "Mia Saigon Luxury", city: "Sài Gòn", c: "Lưu trú", p: 2800000, r: 4.8, d: 8.5, revCount: 1500, images: ["https://picsum.photos/id/70/400/250"], addr: "2-4 Đường số 10, Thủ Đức", hours: "Mở 24/7", phone: "028 6287 4222", desc: "Resort boutique phong cách Indochine nằm sát bờ sông Sài Gòn cực kỳ yên tĩnh.", pros: ["Không gian yên tĩnh", "Bể bơi ven sông đẹp"], cons: ["Khá xa trung tâm"], menu: null, reviews: [{user: "Lan Phương", rate: 5, text: "Rất thích hợp để đi trốn vào cuối tuần."}] },
+        { id: 14, n: "Fusion Original", city: "Sài Gòn", c: "Lưu trú", p: 2500000, r: 4.7, d: 0.5, revCount: 900, images: ["https://picsum.photos/id/80/400/250"], addr: "Saigon Centre, 65 Lê Lợi, Q1", hours: "Mở 24/7", phone: "028 3622 2265", desc: "Khách sạn hiện đại nghệ thuật nằm ngay trong trung tâm thương mại.", pros: ["Tiện lợi mua sắm", "Thiết kế phá cách"], cons: ["Phòng hơi nhỏ"], menu: null, reviews: [{user: "Tuấn Kiệt", rate: 4, text: "Bước xuống sảnh là Takashimaya, quá tiện."}] },
+        { id: 15, n: "Chloe Gallery", city: "Sài Gòn", c: "Lưu trú", p: 3200000, r: 4.8, d: 6.0, revCount: 1100, images: ["https://picsum.photos/id/90/400/250"], addr: "06 Phan Văn Chương, Quận 7", hours: "Mở 24/7", phone: "028 5410 9999", desc: "Tòa lâu đài trắng lộng lẫy bên Hồ Bán Nguyệt, bình yên như một ốc đảo.", pros: ["View hồ Bán Nguyệt", "Kiến trúc như lâu đài"], cons: ["Nhiều muỗi vào ban đêm"], menu: null, reviews: [{user: "Diệu Thúy", rate: 5, text: "Hẹn hò kỉ niệm ở đây thì quá lãng mạn luôn."}] },
+
+        { id: 16, n: "Phố Cổ Hà Nội", city: "Hà Nội", c: "Trải nghiệm", p: 0, r: 4.8, d: 0.1, revCount: 22100, images: ["https://picsum.photos/id/1040/400/250"], addr: "Quận Hoàn Kiếm", hours: "Cả ngày", phone: "Không có", desc: "Lạc lối trong 36 phố phường, nhịp sống vừa xô bồ vừa hoài niệm.", pros: ["Nhiều đồ ăn ngon", "Văn hóa đặc trưng"], cons: ["Hay tắc đường"], menu: null, reviews: [{user: "Hải Nam", rate: 5, text: "Tối rằm đi dạo phố đèn lồng Hàng Mã vui lắm."}] },
+        { id: 17, n: "Bún Chả Hương Liên", city: "Hà Nội", c: "Ẩm thực", p: 50000, r: 4.6, d: 1.2, revCount: 9500, images: ["https://picsum.photos/id/110/400/250"], addr: "24 Lê Văn Hưu, Hai Bà Trưng", hours: "08:00 - 20:00", phone: "024 3943 4106", desc: "Quán bún chả Obama từng ghé ăn, thịt nướng thơm lừng.", pros: ["Chả nướng ngon", "Combo Obama"], cons: ["Quán đông"], menu: [{name: "Combo Obama", price: "120,000đ"}], reviews: [{user: "Tiến Đạt", rate: 4, text: "Ăn cũng ngon nhưng hơi ngọt."}] },
+        { id: 18, n: "Chả Cá Lã Vọng", city: "Hà Nội", c: "Ẩm thực", p: 170000, r: 4.5, d: 0.8, revCount: 5200, images: ["https://picsum.photos/id/120/400/250"], addr: "14 Chả Cá, Hoàn Kiếm", hours: "11:00 - 14:00", phone: "024 3825 3929", desc: "Món ăn lịch sử, cá lăng nướng chảo với thì là.", pros: ["Món ăn đậm nét văn hóa"], cons: ["Giá khá cao"], menu: [{name: "Suất chả cá", price: "170,000đ"}], reviews: [{user: "Phương Vy", rate: 5, text: "Lần nào ra Hà Nội cũng phải ghé."}] },
+        { id: 19, n: "Cà Phê Giảng", city: "Hà Nội", c: "Ẩm thực", p: 35000, r: 4.8, d: 0.4, revCount: 11200, images: ["https://picsum.photos/id/130/400/250"], addr: "39 Nguyễn Hữu Huân", hours: "07:00 - 22:00", phone: "098 989 2236", desc: "Nơi khai sinh ra món cà phê trứng trứ danh.", pros: ["Cafe trứng chuẩn vị", "Giá rẻ"], cons: ["Chật hẹp"], menu: [{name: "Cà phê trứng", price: "35,000đ"}], reviews: [{user: "Nhật Minh", rate: 5, text: "Trứng béo, cafe đắng quyện lại ngon xỉu."}] },
+        { id: 20, n: "Bún Ốc Cô Lan", city: "Hà Nội", c: "Ẩm thực", p: 45000, r: 4.6, d: 2.0, revCount: 3400, images: ["https://picsum.photos/id/140/400/250"], addr: "26 Ngõ 139 Khương Thượng", hours: "06:30 - 14:00", phone: "090 411 1111", desc: "Nước dùng thanh chua vị bỗng rượu, ốc nhồi to giòn.", pros: ["Nước chua thanh", "Ốc giòn tươi"], cons: ["Chỉ bán buổi sáng"], menu: [{name: "Bún ốc to nhỏ", price: "45,000đ"}], reviews: [{user: "Thanh Trúc", rate: 4, text: "Trời rét rét ăn bát bún ốc thì ấm cả lòng."}] },
+        { id: 21, n: "Phở Bát Đàn", city: "Hà Nội", c: "Ẩm thực", p: 60000, r: 4.7, d: 0.5, revCount: 7800, images: ["https://picsum.photos/id/100/400/250"], addr: "49 Bát Đàn, Hoàn Kiếm", hours: "06:00 - 10:00", phone: "Không có", desc: "Quán phở xếp hàng nổi tiếng Hà Nội, nước trong, thịt bò mềm.", pros: ["Vị phở cổ truyền"], cons: ["Phải tự bưng bê"], menu: [{name: "Phở tái chín", price: "60,000đ"}], reviews: [{user: "Bảo Trâm", rate: 5, text: "Sáng dậy làm bát phở Bát Đàn là tỉnh người."}] },
+        { id: 22, n: "Hồ Gươm", city: "Hà Nội", c: "Trải nghiệm", p: 0, r: 4.9, d: 0.0, revCount: 35000, images: ["https://picsum.photos/id/150/400/250"], addr: "Trung tâm Hà Nội", hours: "Cả ngày", phone: "Không có", desc: "Trái tim của Thủ đô, ăn kem Thủy Tạ dạo bộ phố đi bộ cuối tuần.", pros: ["Phố đi bộ cuối tuần nhộn nhịp", "Nhiều sự kiện"], cons: ["Đông nghẹt cuối tuần"], menu: null, reviews: [{user: "Ngọc Diệp", rate: 5, text: "Thu Hà Nội ra Hồ Gươm hóng gió là chân ái."}] },
+        { id: 23, n: "Hoàng Thành Thăng Long", city: "Hà Nội", c: "Trải nghiệm", p: 30000, r: 4.7, d: 1.5, revCount: 8900, images: ["https://picsum.photos/id/160/400/250"], addr: "19C Hoàng Diệu, Ba Đình", hours: "08:00 - 17:00", phone: "024 3734 5427", desc: "Khu di tích lịch sử khổng lồ, nơi lưu giữ tinh hoa ngàn năm văn hiến.", pros: ["Rộng rãi", "Phù hợp chụp áo dài/cổ phục"], cons: ["Đi mỏi chân vì quá rộng"], menu: null, reviews: [{user: "Đình Trọng", rate: 5, text: "Tham quan ban đêm (tour giải mã) cực kỳ ảo diệu."}] },
+        { id: 24, n: "Lăng Bác", city: "Hà Nội", c: "Trải nghiệm", p: 0, r: 5.0, d: 2.0, revCount: 45000, images: ["https://picsum.photos/id/170/400/250"], addr: "2 Hùng Vương, Ba Đình", hours: "07:30 - 10:30 (Trừ T2, T6)", phone: "Không có", desc: "Quảng trường Ba Đình lịch sử, nơi vị cha già dân tộc yên nghỉ.", pros: ["Trang nghiêm", "Lễ thượng cờ hào hùng"], cons: ["Xếp hàng vào lăng rất dài"], menu: null, reviews: [{user: "Thu Hương", rate: 5, text: "Cảm giác rưng rưng tự hào khi xem lễ thượng cờ."}] },
+        { id: 25, n: "Văn Miếu Quốc Tử Giám", city: "Hà Nội", c: "Trải nghiệm", p: 30000, r: 4.8, d: 2.5, revCount: 15000, images: ["https://picsum.photos/id/180/400/250"], addr: "58 Quốc Tử Giám, Đống Đa", hours: "08:00 - 17:00", phone: "024 3845 2917", desc: "Trường đại học đầu tiên của Việt Nam, tụ điểm xin chữ đầu năm.", pros: ["Kiến trúc cổ kính", "Yên tĩnh"], cons: ["Đông đúc dịp thi cử"], menu: null, reviews: [{user: "Sơn Tùng", rate: 5, text: "Gần thi đến sờ đầu rùa lấy may haha."}] },
+        { id: 26, n: "Sofitel Legend Metropole", city: "Hà Nội", c: "Lưu trú", p: 6000000, r: 4.9, d: 0.6, revCount: 4500, images: ["https://picsum.photos/id/190/400/250"], addr: "15 Ngô Quyền, Hoàn Kiếm", hours: "Mở 24/7", phone: "024 3826 6919", desc: "Khách sạn cổ kính bậc nhất Hà Nội, kiến trúc Pháp sang trọng, nơi đón các nguyên thủ.", pros: ["Đẳng cấp quốc tế", "Góc check-in Paris"], cons: ["Giá quá cao"], menu: null, reviews: [{user: "Minh Châu", rate: 5, text: "Buffet sáng và trà chiều ở đây ngon tuyệt vời."}] },
+        { id: 27, n: "Lotte Hotel Hanoi", city: "Hà Nội", c: "Lưu trú", p: 3500000, r: 4.8, d: 4.5, revCount: 3200, images: ["https://picsum.photos/id/200/400/250"], addr: "54 Liễu Giai, Ba Đình", hours: "Mở 24/7", phone: "024 3333 1000", desc: "View toàn thành phố Hà Nội cực xịn từ phòng tắm kính trên cao.", pros: ["View cao tầng cực chill", "Ngay sát trung tâm thương mại"], cons: ["Xa phố cổ"], menu: null, reviews: [{user: "Đức Anh", rate: 4, text: "Bể bơi và phòng gym trang thiết bị rất mới."}] },
+        { id: 28, n: "Capella Hanoi", city: "Hà Nội", c: "Lưu trú", p: 8000000, r: 5.0, d: 0.5, revCount: 800, images: ["https://picsum.photos/id/210/400/250"], addr: "11 Lê Phụng Hiểu, Hoàn Kiếm", hours: "Mở 24/7", phone: "024 3987 8888", desc: "Boutique hotel xa hoa nhất nhì Hà Nội, tái hiện nhà hát Opera lộng lẫy.", pros: ["Thiết kế tỉ mỉ từng chi tiết", "Phục vụ hoàn hảo"], cons: ["Siêu đắt"], menu: null, reviews: [{user: "Kim Ngọc", rate: 5, text: "Trải nghiệm lưu trú không thể chê vào đâu được."}] },
+        { id: 29, n: "Apricot Hotel", city: "Hà Nội", c: "Lưu trú", p: 2500000, r: 4.7, d: 0.1, revCount: 2100, images: ["https://picsum.photos/id/220/400/250"], addr: "136 Hàng Trống, Hoàn Kiếm", hours: "Mở 24/7", phone: "024 3828 9595", desc: "Khách sạn đầy tính nghệ thuật nằm sát bờ Hồ Gươm, có bể bơi vô cực trên mái.", pros: ["Vị trí đắc địa", "Bể bơi tầng thượng đẹp"], cons: ["Phòng tiêu chuẩn hơi nhỏ"], menu: null, reviews: [{user: "Hoài An", rate: 5, text: "Chiều bơi trên mái ngắm hoàng hôn Hồ Gươm rất chill."}] },
+        { id: 30, n: "JW Marriott Hanoi", city: "Hà Nội", c: "Lưu trú", p: 4000000, r: 4.8, d: 8.0, revCount: 4100, images: ["https://picsum.photos/id/230/400/250"], addr: "8 Đỗ Đức Dục, Nam Từ Liêm", hours: "Mở 24/7", phone: "024 3833 5588", desc: "Kiến trúc con rồng nổi bật, không gian xanh mênh mông như resort giữa lòng phố.", pros: ["Kiến trúc độc đáo", "Bữa sáng siêu ngon"], cons: ["Khá xa trung tâm"], menu: null, reviews: [{user: "Thế Bảo", rate: 5, text: "Khách sạn tổng thống Obama từng ở, chất lượng miễn bàn."}] },
+
+        { id: 31, n: "Mì Quảng Bà Mua", city: "Đà Nẵng", c: "Ẩm thực", p: 35000, r: 4.5, d: 2.0, revCount: 6500, images: ["https://picsum.photos/id/240/400/250"], addr: "19-21 Trần Bình Trọng, Hải Châu", hours: "06:30 - 21:30", phone: "098 500 0075", desc: "Thương hiệu mì Quảng quốc dân, tôm thịt đậm đà ăn kèm bánh tráng nướng.", pros: ["Nước lèo đậm đà", "Nhiều cơ sở"], cons: ["Lúc đông nhân viên hay quên món"], menu: [{name: "Mì gà", price: "35,000đ"}], reviews: [{user: "Phương Anh", rate: 4, text: "Tới Đà Nẵng là phải tấp vô ăn tô mì Quảng cho đỡ thèm."}] },
+        { id: 32, n: "Hải Sản Năm Đảnh", city: "Đà Nẵng", c: "Ẩm thực", p: 60000, r: 4.6, d: 5.5, revCount: 11000, images: ["https://picsum.photos/id/250/400/250"], addr: "139/59/38 Trần Quang Khải, Sơn Trà", hours: "10:30 - 20:30", phone: "090 533 3922", desc: "Hải sản đồng giá siêu rẻ, siêu ngon núp sâu trong hẻm thần thánh.", pros: ["Đồng giá 60k rẻ sốc", "Hải sản tươi rói"], cons: ["Hẻm sâu lạc lối", "Hết bàn cực nhanh"], menu: [{name: "Mực nướng sa tế", price: "60,000đ"}], reviews: [{user: "Đăng Khôi", rate: 5, text: "Tìm đường mù mắt nhưng ăn ngon rớt nước mắt."}] },
+        { id: 33, n: "Bánh Xèo Bà Dưỡng", city: "Đà Nẵng", c: "Ẩm thực", p: 60000, r: 4.5, d: 2.5, revCount: 8200, images: ["https://picsum.photos/id/260/400/250"], addr: "K280/23 Hoàng Diệu, Hải Châu", hours: "09:00 - 21:00", phone: "0236 3873 168", desc: "Bánh xèo giòn rụm, nem lụi nướng than hoa ăn cùng nước chấm gan heo béo bùi.", pros: ["Nước chấm độc quyền", "Nem lụi ngon"], cons: ["Hơi ồn ào"], menu: [{name: "Bánh xèo", price: "60,000đ/phần"}], reviews: [{user: "Cẩm Tiên", rate: 5, text: "Ăn chục năm rồi chất lượng vẫn vậy."}] },
+        { id: 34, n: "Chè Sầu Liên", city: "Đà Nẵng", c: "Ẩm thực", p: 25000, r: 4.8, d: 3.0, revCount: 9300, images: ["https://picsum.photos/id/270/400/250"], addr: "189 Hoàng Diệu, Hải Châu", hours: "08:00 - 22:00", phone: "098 999 8888", desc: "Vương quốc chè sầu riêng nức tiếng, múi sầu to bự sầu béo ngậy.", pros: ["Sầu riêng thật", "Giá sinh viên"], cons: ["Đợi mua mang về lâu"], menu: [{name: "Chè sầu riêng", price: "25,000đ"}], reviews: [{user: "Huy Hoàng", rate: 5, text: "Team đạo sầu riêng không thể bỏ qua nha."}] },
+        { id: 35, n: "Bún Chả Cá 109", city: "Đà Nẵng", c: "Ẩm thực", p: 30000, r: 4.4, d: 1.8, revCount: 3100, images: ["https://picsum.photos/id/280/400/250"], addr: "109 Nguyễn Chí Thanh, Hải Châu", hours: "06:00 - 22:00", phone: "090 511 1111", desc: "Tô bún chả cá nóng hổi thơm phức mùi bí đỏ và bắp cải, chả cá quết dai giòn.", pros: ["Chả cá dai ngon", "Nước thanh"], cons: ["Quán hơi nhỏ"], menu: [{name: "Bún chả cá", price: "30,000đ"}], reviews: [{user: "Ngọc Lan", rate: 4, text: "Sáng làm bát bún thêm tí mắm ruốc là hết sẩy."}] },
+        { id: 36, n: "Cầu Rồng", city: "Đà Nẵng", c: "Trải nghiệm", p: 0, r: 4.9, d: 0.8, revCount: 25000, images: ["https://picsum.photos/id/164/400/250"], addr: "Sông Hàn, Đà Nẵng", hours: "T7, CN: 21h phun lửa", phone: "Không có", desc: "Biểu tượng Đà Nẵng, xem Rồng phun lửa phun nước sống động vào cuối tuần.", pros: ["Free", "Phun lửa hoành tráng"], cons: ["Chen lấn xem phun lửa"], menu: null, reviews: [{user: "Tuấn Vũ", rate: 5, text: "Đứng gần là bị ướt nhẹp luôn haha."}] },
+        { id: 37, n: "Bà Nà Hills", city: "Đà Nẵng", c: "Trải nghiệm", p: 850000, r: 4.8, d: 25.0, revCount: 42000, images: ["https://picsum.photos/id/290/400/250"], addr: "Hòa Vang, Đà Nẵng", hours: "08:00 - 17:00", phone: "1900 1111", desc: "Châu Âu thu nhỏ trên đỉnh núi, check-in Cầu Vàng huyền thoại.", pros: ["Cầu Vàng đẹp đỉnh", "Thời tiết mát mẻ"], cons: ["Tốn trọn 1 ngày", "Xếp hàng cáp treo"], menu: null, reviews: [{user: "Lan Ngọc", rate: 5, text: "Cầu Vàng ở ngoài đẹp y như trên báo quốc tế."}] },
+        { id: 38, n: "Bán Đảo Sơn Trà", city: "Đà Nẵng", c: "Trải nghiệm", p: 0, r: 4.7, d: 10.0, revCount: 15000, images: ["https://picsum.photos/id/300/400/250"], addr: "Sơn Trà, Đà Nẵng", hours: "Cả ngày", phone: "Không có", desc: "Chạy xe máy lượn quanh đèo, viếng chùa Linh Ứng và ngắm khỉ hoang dã.", pros: ["Khí hậu mát", "Cảnh biển ôm trọn núi"], cons: ["Đường đèo dốc nguy hiểm"], menu: null, reviews: [{user: "Minh Kha", rate: 4, text: "Gặp mấy bé khỉ dễ thương lắm luôn."}] },
+        { id: 39, n: "Biển Mỹ Khê", city: "Đà Nẵng", c: "Trải nghiệm", p: 0, r: 4.9, d: 3.5, revCount: 30000, images: ["https://picsum.photos/id/310/400/250"], addr: "Võ Nguyên Giáp, Sơn Trà", hours: "Cả ngày", phone: "Không có", desc: "Một trong những bãi biển quyến rũ nhất hành tinh, cát trắng mịn, nước trong vắt.", pros: ["Biển sạch", "Bãi cát rộng mịn"], cons: ["Mùa hè rất đông"], menu: null, reviews: [{user: "Quốc Đạt", rate: 5, text: "Sáng dậy sớm ra đây tắm biển ngắm bình minh."}] },
+        { id: 40, n: "Ngũ Hành Sơn", city: "Đà Nẵng", c: "Trải nghiệm", p: 40000, r: 4.6, d: 8.0, revCount: 12000, images: ["https://picsum.photos/id/320/400/250"], addr: "81 Huyền Trân Công Chúa, Ngũ Hành Sơn", hours: "07:00 - 17:30", phone: "0236 3961 114", desc: "Hệ thống 5 ngọn núi đá vôi kỳ vĩ với những hang động, đền chùa tâm linh.", pros: ["Động Huyền Không huyền ảo", "Cảnh thiên nhiên đẹp"], cons: ["Leo bậc thang mệt"], menu: null, reviews: [{user: "Mai Thỏ", rate: 4, text: "Khung cảnh bên trong động ánh sáng hắt xuống như tiên cảnh."}] },
+        { id: 41, n: "InterContinental Danang", city: "Đà Nẵng", c: "Lưu trú", p: 10000000, r: 4.9, d: 15.0, revCount: 3800, images: ["https://picsum.photos/id/330/400/250"], addr: "Bán đảo Sơn Trà", hours: "Mở 24/7", phone: "0236 3938 888", desc: "Resort siêu sang bậc nhất Châu Á, thiết kế lộng lẫy nép mình trên vách núi.", pros: ["Thiết kế của Bill Bensley", "Riêng tư tuyệt đối"], cons: ["Siêu đắt"], menu: null, reviews: [{user: "Kiều Loan", rate: 5, text: "Thiên đường nghỉ dưỡng thực sự, xứng đáng từng đồng."}] },
+        { id: 42, n: "Hyatt Regency", city: "Đà Nẵng", c: "Lưu trú", p: 4000000, r: 4.8, d: 7.0, revCount: 5200, images: ["https://picsum.photos/id/340/400/250"], addr: "5 Trường Sa, Ngũ Hành Sơn", hours: "Mở 24/7", phone: "0236 3981 234", desc: "Resort biển gia đình với hệ thống hồ bơi cực đẹp và bãi biển riêng.", pros: ["Bãi biển cát trắng riêng", "Hồ bơi rộng"], cons: ["Đông đúc dịp hè"], menu: null, reviews: [{user: "Bảo Trọng", rate: 5, text: "Gia đình mình có con nhỏ tới đây nghỉ là tuyệt nhất."}] },
+        { id: 43, n: "Novotel Han River", city: "Đà Nẵng", c: "Lưu trú", p: 2500000, r: 4.6, d: 1.5, revCount: 4100, images: ["https://picsum.photos/id/350/400/250"], addr: "36 Bạch Đằng, Hải Châu", hours: "Mở 24/7", phone: "0236 3929 999", desc: "Khách sạn cao tầng view sông Hàn, xem Lễ hội pháo hoa quốc tế là best choice.", pros: ["View sông Hàn", "Skybar trên đỉnh xịn"], cons: ["Thang máy hơi chậm"], menu: null, reviews: [{user: "Yến Nhi", rate: 4, text: "Phòng góc view nhìn cả sông Hàn và biển."}] },
+        { id: 44, n: "Furama Resort", city: "Đà Nẵng", c: "Lưu trú", p: 3500000, r: 4.7, d: 5.0, revCount: 6000, images: ["https://picsum.photos/id/360/400/250"], addr: "105 Võ Nguyên Giáp, Ngũ Hành Sơn", hours: "Mở 24/7", phone: "0236 3847 333", desc: "Resort mang phong cách Chăm Pa cổ điển hòa quyện cùng thiên nhiên xanh mát.", pros: ["Kiến trúc truyền thống", "Buffet hải sản xuất sắc"], cons: ["Phòng hơi cũ"], menu: null, reviews: [{user: "Việt Anh", rate: 5, text: "Khu vườn nhiệt đới của Furama làm mình thấy rất yên bình."}] },
+        { id: 45, n: "Naman Retreat", city: "Đà Nẵng", c: "Lưu trú", p: 5500000, r: 4.8, d: 12.0, revCount: 2200, images: ["https://picsum.photos/id/370/400/250"], addr: "Đường Trường Sa, Ngũ Hành Sơn", hours: "Mở 24/7", phone: "0236 3959 888", desc: "Khu nghỉ dưỡng nổi bật với kiến trúc tre độc đáo, spa trọn gói thư giãn.", pros: ["Kiến trúc tre nứa đẹp", "Dịch vụ Spa miễn phí"], cons: ["Bãi biển dốc"], menu: null, reviews: [{user: "Thu Thủy", rate: 5, text: "Không gian ở đây thiền và cực kỳ healing."}] },
+
+        { id: 46, n: "Lẩu Bò Ba Toa", city: "Đà Lạt", c: "Ẩm thực", p: 250000, r: 4.5, d: 1.5, revCount: 8800, images: ["https://picsum.photos/id/380/400/250"], addr: "1/29 Hoàng Diệu, Đà Lạt", hours: "10:00 - 22:00", phone: "0263 3828 242", desc: "Nồi lẩu bò nghi ngút khói, thịt nạm mềm, gân giòn sần sật giữa tiết trời se lạnh.", pros: ["Thịt bò nhiều", "Nước lèo đậm"], cons: ["Quán gỗ cũ xập xệ", "Phải đợi bàn cực lâu"], menu: [{name: "Lẩu bò", price: "250,000đ"}], reviews: [{user: "Trọng Hiếu", rate: 5, text: "Lên Đà Lạt tối nào không ăn lẩu bò là thiếu thiếu."}] },
+        { id: 47, n: "Lẩu Gà Lá É Tao Ngộ", city: "Đà Lạt", c: "Ẩm thực", p: 200000, r: 4.6, d: 2.0, revCount: 6500, images: ["https://picsum.photos/id/390/400/250"], addr: "5 3 Tháng 4, Phường 3", hours: "09:00 - 23:00", phone: "090 999 9999", desc: "Nước dùng the the vị lá é và măng chua cay, thịt gà đồi dai giòn chắc thịt.", pros: ["Vị lẩu đặc trưng lạ miệng", "Gà ta chắc thịt"], cons: ["Quán chật"], menu: [{name: "Lẩu gà nhỏ", price: "200,000đ"}], reviews: [{user: "Hương Giang", rate: 5, text: "Lá é nhúng vô lẩu ăn the the ấm hết cả người."}] },
+        { id: 48, n: "Bánh Ướt Lòng Gà Long", city: "Đà Lạt", c: "Ẩm thực", p: 35000, r: 4.4, d: 1.0, revCount: 4200, images: ["https://picsum.photos/id/400/400/250"], addr: "202/2/5 Phan Đình Phùng", hours: "07:00 - 19:00", phone: "098 888 7777", desc: "Bánh ướt dẻo dai trộn cùng lòng heo, gà xé mắm gừng chua ngọt lạ miệng.", pros: ["Nước mắm pha khéo", "Thịt gà thả vườn ngon"], cons: ["Phần ăn hơi ít"], menu: [{name: "Bánh ướt lòng gà", price: "35,000đ"}], reviews: [{user: "Khánh Đan", rate: 4, text: "Chua chua ngọt ngọt ăn bắt miệng lắm nha."}] },
+        { id: 49, n: "Bánh Tráng Nướng Dì Đinh", city: "Đà Lạt", c: "Ẩm thực", p: 20000, r: 4.7, d: 1.2, revCount: 5100, images: ["https://picsum.photos/id/410/400/250"], addr: "26 Hoàng Diệu, Phường 5", hours: "14:00 - 20:30", phone: "Không có", desc: "Pizza Đà Lạt chính hiệu, đế bánh giòn tan ngập tràn topping phô mai bò khô.", pros: ["Bánh giòn không bị ỉu", "Nhiều loại topping"], cons: ["Phục vụ hơi chậm lúc đông"], menu: [{name: "Bánh tráng phô mai bò", price: "25,000đ"}], reviews: [{user: "Ngọc Thái", rate: 5, text: "Dì Đinh nướng bánh siêu điệu nghệ luôn."}] },
+        { id: 50, n: "Bánh Căn Lệ", city: "Đà Lạt", c: "Ẩm thực", p: 30000, r: 4.5, d: 1.8, revCount: 3900, images: ["https://picsum.photos/id/420/400/250"], addr: "27/44 Yersin, Phường 10", hours: "07:00 - 17:00", phone: "090 511 2233", desc: "Bánh căn giòn rụm nhân trứng dập đào, chấm với nước mắm xíu mại cay nồng.", pros: ["Xíu mại ngon", "Cô chủ dễ thương"], cons: ["Quán trong hẻm dốc"], menu: [{name: "Bánh căn trứng cút", price: "30,000đ"}], reviews: [{user: "Thúy Vi", rate: 4, text: "Ngồi chờ đổ bánh căn hơ lửa ấm xỉu."}] },
+        { id: 51, n: "Quảng Trường Lâm Viên", city: "Đà Lạt", c: "Trải nghiệm", p: 0, r: 4.8, d: 0.5, revCount: 28000, images: ["https://picsum.photos/id/430/400/250"], addr: "Đường Trần Quốc Toản", hours: "Cả ngày", phone: "Không có", desc: "Nụ hoa Atiso và đóa dã quỳ khổng lồ, điểm check-in không thể thiếu khi tới Đà Lạt.", pros: ["Biểu tượng Đà Lạt", "View hồ Xuân Hương"], cons: ["Quá đông đúc"], menu: null, reviews: [{user: "Nam Phong", rate: 5, text: "Cầm ly sữa đậu nành nóng ra đây hóng gió là bao chill."}] },
+        { id: 52, n: "Đỉnh Langbiang", city: "Đà Lạt", c: "Trải nghiệm", p: 50000, r: 4.6, d: 12.0, revCount: 14000, images: ["https://picsum.photos/id/440/400/250"], addr: "Thị trấn Lạc Dương", hours: "07:00 - 17:00", phone: "0263 3839 456", desc: "Nóc nhà Đà Lạt, đi xe jeep lên đỉnh ngắm toàn cảnh sương mù mờ ảo.", pros: ["View trên cao cực đẹp", "Cảm giác đi xe jeep xịn"], cons: ["Tiền thuê xe jeep đắt"], menu: null, reviews: [{user: "Tiểu Vy", rate: 4, text: "Lên đỉnh săn mây mà mây mù che hết trơn, cơ mà vẫn vui."}] },
+        { id: 53, n: "Hồ Tuyền Lâm", city: "Đà Lạt", c: "Trải nghiệm", p: 0, r: 4.9, d: 7.0, revCount: 18000, images: ["https://picsum.photos/id/450/400/250"], addr: "Phường 4, Đà Lạt", hours: "Cả ngày", phone: "Không có", desc: "Hồ nước thơ mộng được bao quanh bởi rừng thông, thích hợp chèo SUP, cắm trại.", pros: ["Khung cảnh lãng mạn", "Yên tĩnh"], cons: ["Cách xa trung tâm"], menu: null, reviews: [{user: "Bảo Anh", rate: 5, text: "Sáng ra đây chèo SUP sương khói mờ nhân ảnh luôn."}] },
+        { id: 54, n: "Ga Đà Lạt", city: "Đà Lạt", c: "Trải nghiệm", p: 5000, r: 4.7, d: 2.5, revCount: 16000, images: ["https://picsum.photos/id/460/400/250"], addr: "1 Quang Trung, Phường 10", hours: "07:00 - 18:00", phone: "0263 3822 120", desc: "Nhà ga xe lửa cổ kính nhất Đông Dương với đầu máy hơi nước huyền thoại.", pros: ["Kiến trúc Pháp cổ", "Chụp hình vintage hợp"], cons: ["Khu vực tham quan hơi nhỏ"], menu: null, reviews: [{user: "Tuấn Ngọc", rate: 4, text: "Mặc đồ retro lên đây chụp 1 bộ ảnh là hết sẩy."}] },
+        { id: 55, n: "Thung Lũng Tình Yêu", city: "Đà Lạt", c: "Trải nghiệm", p: 250000, r: 4.4, d: 6.0, revCount: 11000, images: ["https://picsum.photos/id/470/400/250"], addr: "3-5-7 Mai Anh Đào", hours: "07:00 - 17:00", phone: "0263 3821 448", desc: "Công viên hoa rộng lớn rực rỡ sắc màu, có mê cung tình yêu và đạp vịt.", pros: ["Nhiều hoa đẹp", "Rộng rãi"], cons: ["Giá vé cao", "Khá sến sẩm với các bạn trẻ"], menu: null, reviews: [{user: "Nhã Phương", rate: 4, text: "Đưa ba mẹ đi thì các cụ thích lắm."}] },
+        { id: 56, n: "Hotel Colline", city: "Đà Lạt", c: "Lưu trú", p: 1800000, r: 4.7, d: 0.1, revCount: 3500, images: ["https://picsum.photos/id/480/400/250"], addr: "10 Phan Bội Châu", hours: "Mở 24/7", phone: "0263 3665 588", desc: "Tòa nhà như khối gỗ xếp chồng lên nhau nằm ngay trung tâm, bước ra là chợ Đà Lạt.", pros: ["Vị trí sát chợ", "Thiết kế hiện đại"], cons: ["Không có view rừng thông"], menu: null, reviews: [{user: "Đăng Khoa", rate: 5, text: "Ngay trung tâm, đi bộ vài bước là ra chợ âm phủ."}] },
+        { id: 57, n: "Ana Mandara Villas", city: "Đà Lạt", c: "Lưu trú", p: 2500000, r: 4.8, d: 2.0, revCount: 2900, images: ["https://picsum.photos/id/490/400/250"], addr: "Lê Lai, Phường 5", hours: "Mở 24/7", phone: "0263 3555 888", desc: "Làng biệt thự Pháp cổ nằm ẩn mình giữa đồi thông mờ sương, đẹp như phim.", pros: ["Cổ kính, lãng mạn", "Bể bơi nước ấm"], cons: ["Hơi muỗi"], menu: null, reviews: [{user: "Lan Khuê", rate: 5, text: "Mùi gỗ thông thơm phức, ở đây bao ngủ ngon."}] },
+        { id: 58, n: "Terracotta Hotel", city: "Đà Lạt", c: "Lưu trú", p: 1500000, r: 4.7, d: 7.5, revCount: 4100, images: ["https://picsum.photos/id/500/400/250"], addr: "Hồ Tuyền Lâm", hours: "Mở 24/7", phone: "0263 3883 838", desc: "Resort khổng lồ sát mép hồ Tuyền Lâm, bao quanh là rừng thông bạt ngàn.", pros: ["View hồ tuyệt đẹp", "Khuôn viên rộng đi dạo thích"], cons: ["Đông khách đoàn"], menu: null, reviews: [{user: "Thùy Chi", rate: 4, text: "Sáng dậy đi dạo quanh hồ không khí trong lành lắm."}] },
+        { id: 59, n: "Dalat Palace Heritage", city: "Đà Lạt", c: "Lưu trú", p: 3000000, r: 4.8, d: 0.5, revCount: 1800, images: ["https://picsum.photos/id/510/400/250"], addr: "2 Trần Phú, Phường 3", hours: "Mở 24/7", phone: "0263 3825 444", desc: "Dinh thự sang trọng với hơn trăm năm tuổi đời, nội thất đậm chất quý tộc.", pros: ["Nội thất quý tộc", "View hồ Xuân Hương"], cons: ["Phòng vệ sinh hơi cũ"], menu: null, reviews: [{user: "Quang Hải", rate: 5, text: "Cảm giác như được làm quý tộc thời xưa vậy."}] },
+        { id: 60, n: "Swiss-Belresort Tuyền Lâm", city: "Đà Lạt", c: "Lưu trú", p: 1600000, r: 4.6, d: 9.0, revCount: 2600, images: ["https://picsum.photos/id/520/400/250"], addr: "Phân khu 7, Tuyền Lâm", hours: "Mở 24/7", phone: "0263 3799 799", desc: "Lâu đài giữa thảm cỏ xanh mướt của sân golf 18 lỗ, tách biệt ồn ào.", pros: ["View sân golf siêu đẹp", "Yên tĩnh tuyệt đối"], cons: ["Xa trung tâm"], menu: null, reviews: [{user: "Gia Hân", rate: 4, text: "View đồi cỏ xanh ngát bao la, hồ bơi nước ấm xịn."}] },
+
+        { id: 61, n: "Bún Quậy Kiến Xây", city: "Phú Quốc", c: "Ẩm thực", p: 65000, r: 4.5, d: 1.0, revCount: 7400, images: ["https://picsum.photos/id/530/400/250"], addr: "28 Bạch Đằng, Dương Đông", hours: "07:00 - 23:30", phone: "083 999 9999", desc: "Đặc sản Phú Quốc, thực khách tự 'quậy' nước chấm, bún tươi làm tại chỗ cùng hải sản.", pros: ["Món ăn độc lạ", "Chả tôm mực tươi ngon"], cons: ["Phải tự pha nước chấm", "Đợi bún lâu"], menu: [{name: "Bún quậy đặc biệt", price: "75,000đ"}], reviews: [{user: "Anh Tú", rate: 5, text: "Tự quậy chén nước chấm là một nghệ thuật."}] },
+        { id: 62, n: "Gỏi Cá Trích Xin Chào", city: "Phú Quốc", c: "Ẩm thực", p: 150000, r: 4.7, d: 1.5, revCount: 4200, images: ["https://picsum.photos/id/540/400/250"], addr: "66 Trần Hưng Đạo, Dương Đông", hours: "11:00 - 22:00", phone: "0297 3999 919", desc: "Nhà hàng sát bờ biển ngắm hoàng hôn, gỏi cá trích cuốn dừa nạo và đậu phộng béo ngậy.", pros: ["View hoàng hôn xuất sắc", "Gỏi cá trích không tanh"], cons: ["Giá hơi nhỉnh hơn mặt bằng"], menu: [{name: "Gỏi cá trích", price: "150,000đ"}], reviews: [{user: "Mai Lan", rate: 5, text: "Gỏi cá trích cuốn bánh tráng chấm tương đậu phộng nhức nách."}] },
+        { id: 63, n: "Chợ Đêm Phú Quốc", city: "Phú Quốc", c: "Ẩm thực", p: 100000, r: 4.4, d: 0.5, revCount: 15000, images: ["https://picsum.photos/id/550/400/250"], addr: "Ngã 3 Bạch Đằng - Nguyễn Đình Chiểu", hours: "17:00 - 23:00", phone: "Không có", desc: "Thiên đường street food hải sản, kẹo chỉ, bánh bò thốt nốt và đậu phộng rang chou chou.", pros: ["Không khí nhộn nhịp", "Nhiều món ăn vặt"], cons: ["Nhiều quán chèo kéo", "Hải sản giá không rẻ"], menu: [{name: "Hải sản nướng", price: "Theo thời giá"}], reviews: [{user: "Hữu Vi", rate: 4, text: "Đi dạo ăn kem dừa búng và mua đậu phộng Chou Chou về làm quà."}] },
+        { id: 64, n: "Bún Kèn Út Lượm", city: "Phú Quốc", c: "Ẩm thực", p: 35000, r: 4.6, d: 1.2, revCount: 2800, images: ["https://picsum.photos/id/560/400/250"], addr: "87 30 Tháng 4, Dương Đông", hours: "06:00 - 10:00", phone: "090 999 8888", desc: "Nước lèo cá nhồng xay nhuyễn nấu với nước cốt dừa và sả, vàng ươm béo ngậy.", pros: ["Món hiếm lạ miệng", "Béo nhưng không ngán"], cons: ["Chỉ bán buổi sáng vài tiếng"], menu: [{name: "Bún kèn", price: "35,000đ"}], reviews: [{user: "Thảo Vy", rate: 5, text: "Đặc sản ít người biết nhưng ăn 1 lần là ghiền vị cốt dừa."}] },
+        { id: 65, n: "Nhà Ghẹ Phú Quốc", city: "Phú Quốc", c: "Ẩm thực", p: 250000, r: 4.5, d: 2.0, revCount: 3100, images: ["https://picsum.photos/id/570/400/250"], addr: "26 Nguyễn Trãi, Dương Đông", hours: "10:00 - 22:00", phone: "0297 3888 888", desc: "Chuyên các món về ghẹ Hàm Ninh tươi sống, ghẹ hấp, lẩu ghẹ chắc nịch.", pros: ["Ghẹ bao chắc, óp đổi con khác"], cons: ["Không gian hơi nóng"], menu: [{name: "Ghẹ Hàm Ninh hấp", price: "700,000đ/kg"}], reviews: [{user: "Minh Quân", rate: 4, text: "Ghẹ ngọt thịt, vỏ mỏng, cắn ngập răng."}] },
+        { id: 66, n: "VinWonders Phú Quốc", city: "Phú Quốc", c: "Trải nghiệm", p: 950000, r: 4.8, d: 22.0, revCount: 25000, images: ["https://picsum.photos/id/580/400/250"], addr: "Bãi Dài, Gành Dầu", hours: "09:00 - 19:30", phone: "1900 6677", desc: "Công viên chủ đề lớn nhất Việt Nam, hàng trăm trò chơi mạo hiểm và thủy cung rùa biển.", pros: ["Thủy cung siêu lớn và đẹp", "Đa dạng trò chơi"], cons: ["Giá vé cao", "Đi mỏi chân"], menu: null, reviews: [{user: "Ngọc Lan", rate: 5, text: "Chụp hình ở Lâu đài trung tâm y như ở Disneyland."}] },
+        { id: 67, n: "Grand World", city: "Phú Quốc", c: "Trải nghiệm", p: 0, r: 4.6, d: 21.0, revCount: 18000, images: ["https://picsum.photos/id/590/400/250"], addr: "Bãi Dài, Gành Dầu", hours: "Cả ngày", phone: "Không có", desc: "Thành phố không ngủ tái hiện Venice lãng mạn, show diễn Tinh Hoa Việt Nam hoành tráng.", pros: ["Cảnh quan Venice đẹp", "Vào cửa miễn phí"], cons: ["Đồ ăn trong khu này đắt"], menu: null, reviews: [{user: "Đình Hiếu", rate: 4, text: "Tối coi show nhạc nước trên sông Venice xuất sắc."}] },
+        { id: 68, n: "Vinpearl Safari", city: "Phú Quốc", c: "Trải nghiệm", p: 650000, r: 4.9, d: 24.0, revCount: 21000, images: ["https://picsum.photos/id/600/400/250"], addr: "Bãi Dài, Gành Dầu", hours: "09:00 - 16:00", phone: "1900 6677", desc: "Công viên chăm sóc bảo tồn động vật bán hoang dã, trải nghiệm 'người nhốt thú thả'.", pros: ["Thú được chăm sóc tốt", "Trải nghiệm đi xe bus ngắm thú rừng"], cons: ["Khá nóng vào buổi trưa"], menu: null, reviews: [{user: "Phương Dung", rate: 5, text: "Sư tử đi rảo bước ngay sát cửa kính xe bus, hồi hộp lắm."}] },
+        { id: 69, n: "Hòn Thơm Nature Park", city: "Phú Quốc", c: "Trải nghiệm", p: 600000, r: 4.8, d: 25.0, revCount: 16000, images: ["https://picsum.photos/id/610/400/250"], addr: "An Thới, Phú Quốc", hours: "08:30 - 17:00", phone: "0899 999 999", desc: "Đi cáp treo vượt biển dài nhất thế giới để đến đảo Hòn Thơm chơi công viên nước Aquatopia.", pros: ["Cáp treo vượt biển view đỉnh", "Công viên nước xịn"], cons: ["Thời gian di chuyển xa"], menu: null, reviews: [{user: "Quốc Vượng", rate: 5, text: "Nhìn từ cáp treo xuống biển nước trong vắt thấy được đáy."}] },
+        { id: 70, n: "Bãi Sao", city: "Phú Quốc", c: "Trải nghiệm", p: 0, r: 4.5, d: 25.0, revCount: 13000, images: ["https://picsum.photos/id/620/400/250"], addr: "An Thới, Phú Quốc", hours: "Cả ngày", phone: "Không có", desc: "Bãi biển đẹp nhất Phú Quốc với bãi cát trắng mịn như kem và rặng dừa nghiêng bóng.", pros: ["Bãi cát trắng mịn", "Nước nông an toàn"], cons: ["Mùa mưa có nhiều rác từ biển dạt vào"], menu: null, reviews: [{user: "Bích Phương", rate: 4, text: "Thuê cái xích đu chụp hình sống ảo là chuẩn bài."}] },
+        { id: 71, n: "JW Marriott Phu Quoc", city: "Phú Quốc", c: "Lưu trú", p: 8000000, r: 4.9, d: 28.0, revCount: 4500, images: ["https://picsum.photos/id/630/400/250"], addr: "Bãi Khem, An Thới", hours: "Mở 24/7", phone: "0297 3779 999", desc: "Kiệt tác của Bill Bensley lấy cảm hứng từ trường đại học viễn tưởng Lamarck, bãi biển siêu đẹp.", pros: ["Thiết kế cực dị và đẹp", "Bãi biển riêng tư cát trắng tinh"], cons: ["Mức giá siêu đắt đỏ"], menu: null, reviews: [{user: "Thanh Hằng", rate: 5, text: "Góc nào trong resort cũng có thể chụp ảnh lên bìa tạp chí."}] },
+        { id: 72, n: "Salinda Resort", city: "Phú Quốc", c: "Lưu trú", p: 3500000, r: 4.9, d: 6.0, revCount: 3800, images: ["https://picsum.photos/id/640/400/250"], addr: "Cửa Lấp, Dương Đông", hours: "Mở 24/7", phone: "0297 3990 011", desc: "Resort boutique mang đậm chất Việt Nam đương đại, nổi tiếng với dịch vụ xuất sắc.", pros: ["Dịch vụ 10 điểm", "Ăn sáng ngon"], cons: ["Hồ bơi hơi nhỏ"], menu: null, reviews: [{user: "Việt Dũng", rate: 5, text: "Bữa sáng uống sâm banh ngắm biển là đặc sản của Salinda."}] },
+        { id: 73, n: "Regent Phu Quoc", city: "Phú Quốc", c: "Lưu trú", p: 9000000, r: 5.0, d: 15.0, revCount: 1200, images: ["https://picsum.photos/id/650/400/250"], addr: "Bãi Trường, Dương Tơ", hours: "Mở 24/7", phone: "0297 3880 000", desc: "Đỉnh cao xa xỉ mới của Phú Quốc, thiết kế tối giản siêu sang, phòng nào cũng có hồ bơi riêng.", pros: ["Sang trọng bậc nhất", "Tiện ích đẳng cấp"], cons: ["Giá 'chát' nhất nhì đảo"], menu: null, reviews: [{user: "Trấn Thành", rate: 5, text: "Phòng nghỉ và dịch vụ đúng nghĩa 6 sao."}] },
+        { id: 74, n: "InterContinental Phu Quoc", city: "Phú Quốc", c: "Lưu trú", p: 4500000, r: 4.8, d: 15.0, revCount: 4100, images: ["https://picsum.photos/id/660/400/250"], addr: "Bãi Trường, Dương Tơ", hours: "Mở 24/7", phone: "0297 3978 888", desc: "Resort cực phù hợp cho gia đình có trẻ em, sở hữu quán bar Bạch Tuộc (INK 360).", pros: ["INK 360 ngắm hoàng hôn đỉnh", "Khu vui chơi trẻ em xịn"], cons: ["Resort quá rộng đi bộ mệt"], menu: null, reviews: [{user: "Gia Linh", rate: 5, text: "Lên INK 360 uống cocktail ngắm hoàng hôn đỏ rực là đỉnh cao."}] },
+        { id: 75, n: "Novotel Phu Quoc", city: "Phú Quốc", c: "Lưu trú", p: 2500000, r: 4.6, d: 10.0, revCount: 5200, images: ["https://picsum.photos/id/670/400/250"], addr: "Bãi Trường, Dương Tơ", hours: "Mở 24/7", phone: "0297 3628 888", desc: "Khu nghỉ dưỡng quy mô lớn với nhiều hồ bơi, phù hợp cho đoàn đông người và công ty.", pros: ["Nhiều hồ bơi", "Giá cả hợp lý"], cons: ["Thiết kế hơi đại trà", "Khách đoàn đông ồn ào"], menu: null, reviews: [{user: "Hữu Trí", rate: 4, text: "Resort tiêu chuẩn, phòng ốc sạch sẽ và bãi biển rộng."}] }
+    ];
+
+    let currentCity = "All";
+    const aiList = document.getElementById('aiList');
+    const topCitiesList = ["Tất cả", "Sài Gòn", "Hà Nội", "Đà Nẵng", "Đà Lạt", "Phú Quốc"];
+    const citySearchInput = document.getElementById('aiCitySearch');
+    const citySuggBox = document.getElementById('citySuggestions');
+
+    function render(dataList, containerId = 'aiList') {
+        const container = document.getElementById(containerId);
+        if (dataList.length === 0) {
+            container.innerHTML = `<div style="padding:20px; text-align:center; color:#999; width:100%;">Không có địa điểm phù hợp!</div>`;
+            return;
+        }
+        container.innerHTML = dataList.map(item => `
+            <div class="card" onclick="openDetail(${item.id})">
+                <span class="card-badge">${item.c}</span>
+                <img src="${item.images[0]}" class="card-img">
+                <div class="card-body">
+                    <div class="card-title">${item.n} <span style="color:var(--primary)">${item.p > 0 ? item.p.toLocaleString('vi-VN')+'đ' : 'Free'}</span></div>
+                    <div class="card-meta"><span>⭐ ${item.r}</span><span>📍 ${item.d}km</span></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    citySearchInput.oninput = function() {
+        const val = this.value.toLowerCase().trim();
+        let matches = topCitiesList.filter(c => c.toLowerCase().includes(val));
+        if (matches.length === 0 || val === "") { citySuggBox.style.display = 'none'; return; }
+        citySuggBox.innerHTML = matches.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#ccc; margin-right:8px;"></i> ${city}</div>`).join('');
+        citySuggBox.style.display = 'block';
+    };
+
+    citySearchInput.onfocus = function() {
+        citySuggBox.innerHTML = topCitiesList.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#ccc; margin-right:8px;"></i> ${city}</div>`).join('');
+        citySuggBox.style.display = 'block';
+    };
+
+    window.selectAiCity = function(city) {
+        citySearchInput.value = city === "Tất cả" ? "" : city;
+        citySuggBox.style.display = 'none';
+        currentCity = city === "Tất cả" ? "All" : city;
+        filterByCat('all', document.querySelector('.cat-pill'));
+    };
+
+    window.scrollAi = function(dir) { document.getElementById('aiList').scrollBy({ left: dir * 280, behavior: 'smooth' }); };
+
+    window.filterByCat = function(category, el) {
+        document.querySelectorAll('.cat-pill').forEach(btn => btn.classList.remove('active'));
+        if(el) el.classList.add('active');
+        let listByCity = (currentCity === "All") ? allPlaces : allPlaces.filter(p => p.city === currentCity);
+        let finalFiltered = (category === "all") ? listByCity : listByCity.filter(p => p.c === category);
+        render(finalFiltered);
+    };
+
+    let currentImgIdx = 0;
+    let currentDetailId = null;
+    window.openDetail = function(id) {
+        currentDetailId = id;
+        const place = allPlaces.find(p => p.id === id);
+        if(!place) return;
+
+        document.getElementById('dmName').innerText = place.n;
+        document.getElementById('dmCat').innerText = place.c;
+        document.getElementById('dmRateNum').innerText = place.r;
+        document.getElementById('dmRevCount').innerText = `(${place.revCount.toLocaleString('vi-VN')} đánh giá)`;
+        document.getElementById('dmAddr').innerText = place.addr;
+        document.getElementById('dmHours').innerText = place.hours;
+        document.getElementById('dmPhone').innerText = place.phone;
+        document.getElementById('dmDesc').innerText = place.desc;
+
+        currentImgIdx = 0;
+        let carHTML = place.images.map((img, i) => `<img src="${img}" class="dm-img ${i===0?'active':''}" id="dmImg-${i}">`).join('');
+        if(place.images.length > 1) {
+            carHTML += `<button class="dm-car-btn dm-car-prev" onclick="changeImg(-1, ${place.images.length})"><i class="fas fa-chevron-left"></i></button>`;
+            carHTML += `<button class="dm-car-btn dm-car-next" onclick="changeImg(1, ${place.images.length})"><i class="fas fa-chevron-right"></i></button>`;
+            carHTML += `<div class="dm-img-counter" id="dmImgCount">1 / ${place.images.length}</div>`;
+        }
+        document.getElementById('dmCarousel').innerHTML = carHTML;
+
+        document.getElementById('dmPros').innerHTML = place.pros.map(p => `<li>${p}</li>`).join('');
+        document.getElementById('dmCons').innerHTML = place.cons.map(c => `<li>${c}</li>`).join('');
+
+        const menuSec = document.getElementById('dmMenuSec');
+        if (place.c === 'Ẩm thực' && place.menu) {
+            document.getElementById('dmMenuBox').innerHTML = place.menu.map(m => `<div class="dm-menu-item"><span>${m.name}</span><b>${m.price}</b></div>`).join('');
+            menuSec.style.display = 'block';
+            document.getElementById('dmBookBtn').innerHTML = "<i class='fas fa-utensils'></i> Đặt Bàn Nhé Bé";
+        } else {
+            menuSec.style.display = 'none';
+            document.getElementById('dmBookBtn').innerHTML = "<i class='fas fa-ticket-alt'></i> Đặt Vé Ngay";
+        }
+
+        document.getElementById('dmReviewBox').innerHTML = place.reviews.map(r => `<div class="dm-review"><div class="dm-rev-user"><span>${r.user}</span> <span style="color:#f39c12"> ${'⭐'.repeat(r.rate)}</span></div><div class="dm-rev-text">"${r.text}"</div></div>`).join('');
+
+        let similar = allPlaces.filter(p => p.c === place.c && p.id !== place.id);
+        render(similar, 'dmSimilar');
+
+        document.getElementById('placeDetail').classList.add('active');
+        document.body.style.overflow = 'hidden'; 
+    };
+
+    window.closeDetail = function() {
+        document.getElementById('placeDetail').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+
+    window.changeImg = function(step, total) {
+        document.getElementById(`dmImg-${currentImgIdx}`).classList.remove('active');
+        currentImgIdx = (currentImgIdx + step + total) % total;
+        document.getElementById(`dmImg-${currentImgIdx}`).classList.add('active');
+        document.getElementById('dmImgCount').innerText = `${currentImgIdx + 1} / ${total}`;
+    };
+
+    render(allPlaces);
+
+    // === UTILITY GRID ===
+    let currentUtilPage = 0;
+    const utilPages = document.querySelectorAll('.utility-page');
+    const utilDotEls = document.querySelectorAll('.util-dot');
+
+    window.goUtilPage = function(idx) {
+        utilPages[currentUtilPage].classList.remove('active');
+        utilDotEls[currentUtilPage].classList.remove('active');
+        currentUtilPage = idx;
+        utilPages[currentUtilPage].classList.add('active');
+        utilDotEls[currentUtilPage].classList.add('active');
+    };
+
+    // Swipe support for utility card
+    let utilTouchStartX = 0;
+    const utilCard = document.getElementById('utilityCard');
+    utilCard.addEventListener('touchstart', e => { utilTouchStartX = e.touches[0].clientX; }, { passive: true });
+    utilCard.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - utilTouchStartX;
+        if (Math.abs(dx) > 40) {
+            const next = dx < 0
+                ? Math.min(currentUtilPage + 1, utilPages.length - 1)
+                : Math.max(currentUtilPage - 1, 0);
+            if (next !== currentUtilPage) goUtilPage(next);
+        }
+    }, { passive: true });
+
+    window.utilityClick = function(type) {
+        const labels = {
+            // Page 1
+            bay:        'Tìm chuyến bay',
+            khachsan:   'Tìm khách sạn',
+            hoatdong:   'Hoạt động du lịch',
+            xekhach:    'Vé xe khách',
+            thuyền:     'Du thuyền',
+            combo:      'Combo tiết kiệm',
+            tour:       'Tour',
+            xe:         'Thuê xe',
+            airport:    'Đưa đón sân bay',
+            // Page 2
+            restaurant: 'Nhà hàng đặt bàn',
+            spa:        'Spa & Wellness',
+            show:       'Show & Sự kiện',
+            golf:       'Golf & Thể thao',
+            visa:       'Dịch vụ Visa',
+            baohi:      'Bảo hiểm du lịch',
+            photo:      'Chụp ảnh du lịch',
+            simcard:    'SIM & WiFi',
+            luggage:    'Gửi hành lý',
+            // Page 3
+            voucher:    'Voucher Hot',
+            loyalty:    'Hội viên VIP',
+            deals:      'Flash Deals',
+            gift:       'Quà tặng & Ưu đãi',
+            topup:      'Nạp ví',
+            referral:   'Giới thiệu bạn bè',
+            cashback:   'Hoàn tiền',
+            partner:    'Đối tác liên kết',
+            support:    'Hỗ trợ 24/7',
+        };
+        const name = labels[type] || type;
+        showToast(`${name} — Đang phát triển 🚀`);
+    };
+
+    // === TOP-LEFT OPTIONS DROPDOWN ===
+    window.toggleOptions = function() {
+        optionsOpen = !optionsOpen;
+        const overlay = document.getElementById('optionsOverlay');
+        const fab = document.getElementById('optionsFab');
+        overlay.classList.toggle('show', optionsOpen);
+        fab.classList.toggle('open', optionsOpen);
+        // Dropdown doesn't lock scroll — only dims backdrop
+    };
+
+    window.handleOverlayClick = function(e) {
+        if (e.target.classList.contains('options-backdrop')) {
+            toggleOptions();
+        }
+    };
+
+    window.optionNav = function(type) {
+        toggleOptions();
+        const labels = {
+            home: 'Trang chủ', search: 'Tìm kiếm', booking: 'Đặt chỗ của tôi',
+            voucher: 'Ví Voucher', map: 'Bản đồ', trips: 'Chuyến đi của tôi',
+            loyalty: 'Hội viên & Điểm thưởng', notifications: 'Thông báo',
+            merchant: 'Merchant Portal', support: 'Hỗ trợ 24/7',
+            settings: 'Cài đặt', about: 'Về chúng tôi'
+        };
+        showToast(`${labels[type] || type} — Tính năng đang phát triển 🚀`);
+    };
+
+    // Toast helper
+    function showToast(msg) {
+        let t = document.getElementById('appToast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'appToast';
+            t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:9999;white-space:nowrap;max-width:90%;text-align:center;transition:opacity 0.3s;pointer-events:none;';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = '1';
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+    }
+
+    const swinburneLocation = [10.8162023, 106.6690071];
+    const map = L.map('map', { center: swinburneLocation, zoom: 16, zoomControl: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    const redIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+    L.marker(swinburneLocation, {icon: redIcon}).addTo(map).bindTooltip("Swinburne VN (A35 Bạch Đằng) 🏫✨", { permanent: true, direction: 'top' }).openTooltip();
+    const spots = [{ name: "Menas Mall (CGV) 🛍️", pos: [10.8130, 106.6657] }, { name: "Phở Hoàng Phát 🍜", pos: [10.8147, 106.6719] }, { name: "Highlands Coffee ☕", pos: [10.8146, 106.6723] }, { name: "ibis Saigon Hotel 🏊‍♂️", pos: [10.8132, 106.6661] }, { name: "Prague Saigon Hotel 🏨", pos: [10.8156, 106.6745] }];
+    spots.forEach(spot => { L.marker(spot.pos).addTo(map).bindTooltip(spot.name, { permanent: true, direction: 'top' }); });
+
+    // ================================================================
+    // BOOKING FLOW
+    // ================================================================
+    let bkCurrentStep = 1;
+    let bkPlace = null;
+    let bkSelectedPkg = null;
+    let bkAdults = 2, bkChildren = 0;
+    let bkFinalTotal = 0;
+
+    const pkgTemplates = {
+        'Ẩm thực':   [{ name: 'Đặt bàn thường',  desc: 'Bàn tiêu chuẩn, không ưu tiên',  price: 0 },
+                       { name: 'Bàn VIP + Set menu', desc: 'Vị trí đẹp, set menu cho 2 người', price: 850000 },
+                       { name: 'Tổ chức sự kiện',   desc: 'Phòng riêng + trang trí theo yêu cầu', price: 3500000 }],
+        'Lưu trú':   [{ name: 'Standard Room',   desc: 'Phòng tiêu chuẩn, bao gồm breakfast', price: 1200000 },
+                       { name: 'Deluxe Room',     desc: 'Phòng cao cấp, view đẹp + minibar',   price: 2100000 },
+                       { name: 'Suite',           desc: 'Phòng hạng sang, butler service',     price: 4800000 }],
+        'Trải nghiệm':[{ name: 'Vé cơ bản',       desc: 'Tham quan tự do không hướng dẫn',    price: 350000 },
+                        { name: 'Tour có HD viên', desc: 'Hướng dẫn viên chuyên nghiệp 4h',   price: 680000 },
+                        { name: 'Tour trọn ngày',  desc: 'Hướng dẫn + ăn trưa + đưa đón',     price: 1250000 }],
+    };
+
+    window.openBooking = function(id) {
+        bkPlace = allPlaces.find(p => p.id === id);
+        if (!bkPlace) return;
+        bkCurrentStep = 1;
+        bkAdults = 2; bkChildren = 0;
+        bkSelectedPkg = null;
+        document.getElementById('adultCount').textContent = bkAdults;
+        document.getElementById('childCount').textContent = bkChildren;
+
+        // Default date = tomorrow
+        const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
+        document.getElementById('bkDate').value = tmr.toISOString().split('T')[0];
+        document.getElementById('bkNote').value = '';
+        document.getElementById('bkHeaderTitle').textContent = bkPlace.n;
+
+        // Place preview
+        document.getElementById('bkPlacePreview').innerHTML = `
+            <img src="${bkPlace.images[0]}" class="bk-place-img">
+            <div class="bk-place-info">
+                <h4>${bkPlace.n}</h4>
+                <p><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${bkPlace.addr}</p>
+                <p style="margin-top:4px;">⭐ ${bkPlace.r} · ${bkPlace.c}</p>
+            </div>`;
+
+        // Packages
+        const pkgs = pkgTemplates[bkPlace.c] || pkgTemplates['Trải nghiệm'];
+        document.getElementById('pkgOptions').innerHTML = pkgs.map((p,i) => `
+            <div class="pkg-opt ${i===0?'selected':''}" onclick="selectPkg(this,'${p.name}',${p.price})">
+                <div class="pkg-opt-left"><h5>${p.name}</h5><p>${p.desc}</p></div>
+                <div class="pkg-opt-price">${p.price===0?'Miễn phí':p.price.toLocaleString('vi-VN')+'đ'}</div>
+            </div>`).join('');
+        bkSelectedPkg = { name: pkgs[0].name, price: pkgs[0].price };
+        updateBkTotal();
+
+        bkRenderSteps();
+        document.getElementById('bookingModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.selectPkg = function(el, name, price) {
+        document.querySelectorAll('.pkg-opt').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+        bkSelectedPkg = { name, price };
+        updateBkTotal();
+    };
+
+    window.adjustGuests = function(type, delta) {
+        if (type === 'adult') { bkAdults = Math.max(1, bkAdults + delta); document.getElementById('adultCount').textContent = bkAdults; }
+        else { bkChildren = Math.max(0, bkChildren + delta); document.getElementById('childCount').textContent = bkChildren; }
+        updateBkTotal();
+    };
+
+    function updateBkTotal() {
+        if (!bkSelectedPkg) return;
+        const adultPrice = bkSelectedPkg.price * bkAdults;
+        const childPrice = Math.round(bkSelectedPkg.price * 0.6 * bkChildren);
+        const subtotal = adultPrice + childPrice;
+        const discount = bkSelectedPkg.price > 0 ? Math.round(subtotal * 0.05) : 0;
+        bkFinalTotal = subtotal - discount;
+        document.getElementById('bkTotalDisplay').textContent = bkFinalTotal.toLocaleString('vi-VN') + 'đ';
+    }
+
+    function bkRenderSteps() {
+        [1,2,3,4].forEach(i => {
+            const el = document.getElementById('bkStepEl'+i);
+            el.classList.remove('active','done');
+            if (i < bkCurrentStep) el.classList.add('done');
+            else if (i === bkCurrentStep) el.classList.add('active');
+            if (i < 4) {
+                const line = document.getElementById('bkLine'+i);
+                if (line) line.classList.toggle('done', i < bkCurrentStep);
+            }
+            const stepDiv = document.getElementById('bkStep'+i);
+            if (stepDiv) stepDiv.style.display = (i === bkCurrentStep) ? 'block' : 'none';
+        });
+        // Footer visibility
+        document.getElementById('bkFooter').style.display = bkCurrentStep === 4 ? 'none' : 'block';
+        if (bkCurrentStep === 4) return;
+        const labels = ['', 'Xem lại đơn hàng →', 'Chọn thanh toán →', 'Xác nhận đặt chỗ →'];
+        document.getElementById('bkNextBtn').innerHTML = labels[bkCurrentStep] || 'Tiếp tục';
+    }
+
+    window.bkNext = function() {
+        if (bkCurrentStep === 1) {
+            if (!document.getElementById('bkDate').value) { showToast('Vui lòng chọn ngày đi!'); return; }
+            // Fill review
+            const pkgs = pkgTemplates[bkPlace.c] || pkgTemplates['Trải nghiệm'];
+            const dateVal = new Date(document.getElementById('bkDate').value).toLocaleDateString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+            document.getElementById('rv_name').textContent = bkPlace.n;
+            document.getElementById('rv_pkg').textContent = bkSelectedPkg.name;
+            document.getElementById('rv_date').textContent = dateVal;
+            document.getElementById('rv_time').textContent = document.getElementById('bkTime').value;
+            document.getElementById('rv_adult').textContent = bkAdults + ' người';
+            document.getElementById('rv_child').textContent = bkChildren + ' trẻ em';
+            document.getElementById('rv_note').textContent = document.getElementById('bkNote').value || '—';
+            const ap = bkSelectedPkg.price * bkAdults;
+            const cp = Math.round(bkSelectedPkg.price * 0.6 * bkChildren);
+            const disc = bkSelectedPkg.price > 0 ? Math.round((ap+cp)*0.05) : 0;
+            document.getElementById('rv_adult_label').textContent = `${bkAdults} người lớn × ${bkSelectedPkg.price.toLocaleString('vi-VN')}đ`;
+            document.getElementById('rv_adult_price').textContent = ap.toLocaleString('vi-VN') + 'đ';
+            document.getElementById('rv_child_label').textContent = `${bkChildren} trẻ em × ${Math.round(bkSelectedPkg.price*0.6).toLocaleString('vi-VN')}đ`;
+            document.getElementById('rv_child_price').textContent = cp.toLocaleString('vi-VN') + 'đ';
+            document.getElementById('rv_child_row').style.display = bkChildren > 0 ? 'flex' : 'none';
+            document.getElementById('rv_discount').textContent = '−' + disc.toLocaleString('vi-VN') + 'đ';
+            document.getElementById('rv_total').textContent = bkFinalTotal.toLocaleString('vi-VN') + 'đ';
+        } else if (bkCurrentStep === 2) {
+            document.getElementById('pay_total').textContent = bkFinalTotal.toLocaleString('vi-VN') + 'đ';
+        } else if (bkCurrentStep === 3) {
+            // Confirm → generate booking code + add to history
+            const code = 'LAI-' + Math.random().toString(36).substring(2,7).toUpperCase();
+            document.getElementById('bkConfirmCode').textContent = code;
+            const dateVal = document.getElementById('bkDate').value;
+            bookingHistory.unshift({
+                id: code, placeId: bkPlace.id, name: bkPlace.n,
+                img: bkPlace.images[0], cat: bkPlace.c, addr: bkPlace.addr,
+                date: dateVal, time: document.getElementById('bkTime').value,
+                pkg: bkSelectedPkg.name, adults: bkAdults, children: bkChildren,
+                note: document.getElementById('bkNote').value,
+                total: bkFinalTotal, status: 'upcoming',
+                payMethod: document.querySelector('.pay-method.selected .pay-method-info h5').textContent
+            });
+        }
+        bkCurrentStep++;
+        bkRenderSteps();
+        document.getElementById('bkBodyWrap').scrollTop = 0;
+    };
+
+    window.selectPayMethod = function(el) {
+        document.querySelectorAll('.pay-method').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+    };
+
+    window.closeBooking = function() {
+        document.getElementById('bookingModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+
+    // ================================================================
+    // HISTORY PAGE
+    // ================================================================
+    // Sample data
+    const bookingHistory = [
+        { id:'LAI-DT001', placeId:1, name:'Bánh Mì Huỳnh Hoa', img:'https://picsum.photos/id/1080/400/250', cat:'Ẩm thực', addr:'26 Lê Thị Riêng, Quận 1', date:'2026-03-22', time:'19:00', pkg:'Bàn VIP + Set menu', adults:2, children:0, note:'Ăn kỷ niệm 1 năm, cần nến + hoa', total:807500, status:'upcoming', payMethod:'Thẻ tín dụng / ghi nợ' },
+        { id:'LAI-HN002', placeId:5, name:'Lẩu Thái Ớt Xiêm', img:'https://picsum.photos/id/48/400/250', cat:'Ẩm thực', addr:'18 Đinh Tiên Hoàng, Hà Nội', date:'2026-02-14', time:'12:00', pkg:'Đặt bàn thường', adults:4, children:1, note:'', total:0, status:'done', payMethod:'Ví LocalAI' },
+        { id:'LAI-DN003', placeId:15, name:'Tour Bà Nà Hills', img:'https://picsum.photos/id/76/400/250', cat:'Trải nghiệm', addr:'Bà Nà Hills, Đà Nẵng', date:'2026-01-30', time:'08:30', pkg:'Tour có HD viên', adults:2, children:2, note:'Cần stroller cho bé', total:3400000, status:'cancelled', payMethod:'Chuyển khoản ngân hàng' },
+    ];
+
+    const itineraryData = {
+        'Ẩm thực': (b) => [{
+            day: 'Ngày đặt bàn', date: formatDate(b.date),
+            events: [
+                { time: b.time, name: 'Đến nhà hàng ' + b.name, desc: b.addr },
+                { time: addHours(b.time, 0.5), name: 'Gọi món & khai vị', desc: 'Set menu ' + b.pkg },
+                { time: addHours(b.time, 1.5), name: 'Món chính & tráng miệng', desc: 'Thưởng thức không gian ẩm thực đặc sắc' },
+                { time: addHours(b.time, 2.5), name: 'Check-out', desc: 'Thanh toán & nhận hóa đơn' },
+            ]
+        }],
+        'Trải nghiệm': (b) => [{
+            day: 'Ngày trải nghiệm', date: formatDate(b.date),
+            events: [
+                { time: b.time, name: 'Tập trung điểm đón', desc: 'Xe đưa đón đến tại địa điểm' },
+                { time: addHours(b.time, 0.5), name: 'Khởi hành đến ' + b.name, desc: b.addr },
+                { time: addHours(b.time, 1), name: 'Check-in & briefing', desc: 'Hướng dẫn viên giới thiệu lịch trình' },
+                { time: addHours(b.time, 2), name: 'Tham quan chính', desc: 'Khám phá các điểm nổi bật theo ' + b.pkg },
+                { time: addHours(b.time, 4), name: 'Ăn trưa / nghỉ ngơi', desc: 'Thưởng thức ẩm thực địa phương' },
+                { time: addHours(b.time, 5.5), name: 'Tiếp tục tham quan', desc: 'Các điểm còn lại trong hành trình' },
+                { time: addHours(b.time, 7), name: 'Kết thúc & về điểm đón', desc: 'Nhận chứng nhận & tặng quà lưu niệm' },
+            ]
+        }],
+        'Lưu trú': (b) => [
+            {
+                day: 'Ngày nhận phòng', date: formatDate(b.date),
+                events: [
+                    { time: '14:00', name: 'Check-in khách sạn', desc: b.name + ' — ' + b.addr },
+                    { time: '15:00', name: 'Khám phá tiện ích', desc: 'Hồ bơi, spa, gym và các tiện ích' },
+                    { time: '18:00', name: 'Welcome dinner', desc: 'Bữa tối chào mừng tại nhà hàng khách sạn' },
+                ]
+            },
+            {
+                day: 'Ngày 2 — Tự do', date: '',
+                events: [
+                    { time: '07:00', name: 'Breakfast included', desc: 'Bữa sáng buffet tại nhà hàng' },
+                    { time: '09:00', name: 'Tự do khám phá', desc: 'Tham quan thành phố theo sở thích' },
+                    { time: '12:00', name: 'Check-out', desc: 'Trả phòng & làm thủ tục rời đi' },
+                ]
+            }
+        ],
+    };
+
+    function formatDate(d) { return new Date(d).toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'}); }
+    function addHours(t, h) {
+        const [hr,mn] = t.split(':').map(Number);
+        const total = hr*60 + mn + h*60;
+        return `${String(Math.floor(total/60)%24).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+    }
+
+    let currentHistTab = 0;
+    window.openHistory = function() {
+        uDrop.classList.remove('show');
+        renderHistList();
+        document.getElementById('historyModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeHistory = function() {
+        document.getElementById('historyModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+    window.switchHistTab = function(idx, el) {
+        currentHistTab = idx;
+        document.querySelectorAll('.hist-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        renderHistList();
+    };
+
+    function renderHistList() {
+        const statusMap = ['upcoming','done','cancelled'];
+        const filtered = bookingHistory.filter(b => b.status === statusMap[currentHistTab]);
+        const list = document.getElementById('histList');
+        if (!filtered.length) {
+            const labels = ['chuyến đi sắp tới','chuyến đã hoàn thành','chuyến đã huỷ'];
+            list.innerHTML = `<div class="hist-empty"><i class="fas fa-umbrella-beach"></i><p>Chưa có ${labels[currentHistTab]}</p></div>`;
+            return;
+        }
+        list.innerHTML = filtered.map(b => `
+            <div class="hist-card" onclick="openItinerary('${b.id}')">
+                <div class="hist-card-img-wrap">
+                    <img src="${b.img}" class="hist-card-img">
+                    <span class="hist-status ${b.status}">${b.status==='upcoming'?'Sắp tới':b.status==='done'?'Hoàn thành':'Đã huỷ'}</span>
+                </div>
+                <div class="hist-card-body">
+                    <div class="hist-card-name">${b.name}</div>
+                    <div style="font-size:12px;color:#888;margin-bottom:8px;"><i class="fas fa-suitcase" style="color:var(--primary)"></i> ${b.pkg} · ${b.adults} người${b.children?' + '+b.children+' trẻ em':''}</div>
+                    <div class="hist-card-meta">
+                        <div class="hist-card-date"><i class="far fa-calendar-alt"></i> ${formatDate(b.date)} lúc ${b.time}</div>
+                        <div class="hist-card-code">${b.id}</div>
+                    </div>
+                    ${b.total>0?`<div style="margin-top:8px;font-size:13px;font-weight:700;color:#e74c3c;">${b.total.toLocaleString('vi-VN')}đ</div>`:'<div style="margin-top:8px;font-size:12px;color:#27ae60;font-weight:600;">Miễn phí</div>'}
+                </div>
+            </div>`).join('');
+    }
+
+    window.openItinerary = function(id) {
+        const b = bookingHistory.find(x => x.id === id);
+        if (!b) return;
+        document.getElementById('itinTitle').textContent = b.name;
+        document.getElementById('itinInfoBox').innerHTML = `
+            <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-clipboard-list" style="color:var(--primary)"></i> Thông tin đặt chỗ</div>
+            <div class="itin-info-row"><span>Mã booking</span><span style="color:var(--primary);font-family:monospace;font-weight:800;">${b.id}</span></div>
+            <div class="itin-info-row"><span>Trạng thái</span><span class="hist-status ${b.status}" style="position:static;">${b.status==='upcoming'?'Sắp tới':b.status==='done'?'Hoàn thành':'Đã huỷ'}</span></div>
+            <div class="itin-info-row"><span>Gói dịch vụ</span><span>${b.pkg}</span></div>
+            <div class="itin-info-row"><span>Ngày & giờ</span><span>${formatDate(b.date)} ${b.time}</span></div>
+            <div class="itin-info-row"><span>Thành phần</span><span>${b.adults} người lớn${b.children?' + '+b.children+' trẻ em':''}</span></div>
+            <div class="itin-info-row"><span>Thanh toán</span><span>${b.payMethod||'—'}</span></div>
+            ${b.total>0?`<div class="itin-info-row"><span>Tổng tiền</span><span style="color:#e74c3c;font-weight:800;">${b.total.toLocaleString('vi-VN')}đ</span></div>`:''}
+            ${b.note?`<div class="itin-info-row"><span>Ghi chú</span><span style="max-width:55%;text-align:right;">${b.note}</span></div>`:''}`;
+
+        const template = itineraryData[b.cat] || itineraryData['Trải nghiệm'];
+        const days = template(b);
+        document.getElementById('itinDays').innerHTML = days.map(day => `
+            <div class="itin-day">
+                <div class="itin-day-header">
+                    <span class="itin-day-badge">${day.day}</span>
+                    ${day.date?`<span class="itin-day-date">${day.date}</span>`:''}
+                </div>
+                <div class="itin-timeline">
+                    ${day.events.map(ev => `
+                        <div class="itin-event">
+                            <div class="itin-event-time"><i class="far fa-clock"></i> ${ev.time}</div>
+                            <div class="itin-event-name">${ev.name}</div>
+                            <div class="itin-event-desc">${ev.desc}</div>
+                        </div>`).join('')}
+                </div>
+            </div>`).join('');
+
+        const actBox = document.getElementById('itinActionsBox');
+        if (b.status === 'upcoming') {
+            actBox.innerHTML = `
+                <button class="itin-btn contact" onclick="showToast('Đang kết nối với tư vấn viên... 📞')"><i class="fas fa-headset"></i> Liên hệ hỗ trợ</button>
+                <button class="itin-btn cancel" onclick="cancelBooking('${b.id}')"><i class="fas fa-times-circle"></i> Huỷ đặt chỗ</button>`;
+        } else {
+            actBox.innerHTML = `<button class="itin-btn contact" style="background:#f0f8ff;color:var(--primary);flex:1;" onclick="openBooking(${b.placeId}); closeItinerary(); closeHistory();"><i class="fas fa-redo"></i> Đặt lại dịch vụ này</button>`;
+        }
+
+        document.getElementById('itineraryModal').classList.add('active');
+    };
+
+    window.cancelBooking = function(id) {
+        const b = bookingHistory.find(x => x.id === id);
+        if (!b) return;
+        if (!confirm(`Xác nhận huỷ booking ${id}?\nLưu ý: Hoàn tiền theo chính sách 48h.`)) return;
+        b.status = 'cancelled';
+        showToast('Đã huỷ booking ' + id + ' thành công');
+        closeItinerary();
+        renderHistList();
+    };
+
+    window.closeItinerary = function() {
+        document.getElementById('itineraryModal').classList.remove('active');
+    };
+
+</script>
+</body>
+</html>
