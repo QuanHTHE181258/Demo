@@ -12,17 +12,40 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         html { height: auto; overflow-y: scroll; }
         body { background: #e9ecef; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-        .app-container { width: 100%; max-width: 414px; background: var(--bg); min-height: 100vh; height: auto; position: relative; overflow-x: hidden; overflow-y: visible; padding-bottom: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .app-container { width: 100%; max-width: 414px; background: var(--bg); min-height: 100vh; height: auto; position: relative; overflow-x: hidden; overflow-y: visible; padding-bottom: 72px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+        /* BOTTOM NAV BAR */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 414px; height: 56px; background: #ffffff; border-top: 1px solid #ebebeb; box-shadow: 0 -2px 12px rgba(0,0,0,0.07); display: flex; align-items: center; z-index: 600; padding-bottom: env(safe-area-inset-bottom); }
+        .bn-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; padding: 6px 0; transition: color 0.15s; color: #aaa; }
+        .bn-tab i { font-size: 20px; }
+        .bn-tab span { font-size: 10px; font-weight: 600; line-height: 1; }
+        .bn-tab.active { color: var(--primary); }
+        .bn-tab:active { opacity: 0.7; }
+        .bn-tab-ai { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .bn-ai-btn { width: 44px; height: 44px; background: linear-gradient(135deg, #1ba0e2, #007bff); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 4px 12px rgba(27,160,226,0.4); border: none; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+        .bn-ai-btn:active { transform: scale(0.93); box-shadow: 0 2px 6px rgba(27,160,226,0.3); }
+        /* user-dropdown no longer used — removed */
 
         /* HEADER */
-        .main-header { background: linear-gradient(135deg, #1ba0e2, #007bff); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 20px 20px; position: relative; z-index: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .h-left, .h-right { position: relative; cursor: pointer; }
+        .main-header { background: linear-gradient(135deg, #1ba0e2, #007bff); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 10px; border-radius: 0 0 20px 20px; position: relative; z-index: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .h-top-row { display: none; }
+        .h-left, .h-right { position: relative; cursor: pointer; flex-shrink: 0; }
         .h-left i { font-size: 26px; }
-        .h-mid { font-weight: 800; font-size: 18px; letter-spacing: 1px; }
-        .h-right { font-size: 14px; font-weight: bold; }
+        .h-mid { font-weight: 800; font-size: 18px; letter-spacing: 1px; flex-shrink: 0; }
+        .h-right { font-size: 14px; font-weight: bold; flex-shrink: 0; }
+        .main-header .util-search-bar { flex: 1; min-width: 0; background: rgba(255,255,255,0.18); border-radius: 10px; padding: 8px 10px; margin-bottom: 0; }
+        .main-header .util-search-bar span { color: rgba(255,255,255,0.8); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .main-header .util-search-bar i { color: rgba(255,255,255,0.7); font-size: 13px; }
+        .main-header .util-search-bar .util-mic { color: white !important; }
+        .main-header .util-search-bar:active { background: rgba(255,255,255,0.25); }
         
-        .user-dropdown { position: absolute; top: 35px; left: 0; background: white; width: 280px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; cursor: default; }
-        .user-dropdown.show { display: flex; animation: fadeIn 0.2s ease-in-out; }
+        /* user-dropdown replaced by options-overlay */
+        /* UTILITY SEARCH BAR */
+        .util-search-bar { display: flex; align-items: center; gap: 10px; background: #f4f6f8; border-radius: 14px; padding: 11px 14px; margin-bottom: 14px; cursor: pointer; transition: background 0.15s; }
+        .util-search-bar:active { background: #eaedf0; }
+        .util-search-bar i { color: #aaa; font-size: 15px; }
+        .util-search-bar span { flex: 1; font-size: 13px; color: #aaa; font-weight: 500; }
+        .util-mic { color: var(--primary) !important; }
         .u-info { padding: 20px; text-align: center; border-bottom: 1px solid #eee; background: #f8f9fa; }
         .u-avt { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 3px solid var(--primary); }
         .u-info h4 { color: #333; margin-bottom: 5px; font-size: 18px; }
@@ -186,26 +209,24 @@
         .options-overlay.show { display: block; pointer-events: auto; }
         .options-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.2s ease; }
         .options-overlay.show .options-backdrop { opacity: 1; }
-        /* Dropdown panel from top-left */
+        /* Bottom sheet — slide up from bottom */
         .options-sheet {
             position: absolute;
-            top: 58px;                          /* just below header */
+            bottom: 0;
             left: 50%;
-            margin-left: -207px;                /* align to left edge of 414px app */
-            width: 270px;
+            transform: translateX(-50%) translateY(100%);
+            width: 100%;
+            max-width: 414px;
             background: white;
-            border-radius: 4px 18px 18px 18px; /* sharp top-left corner = "from button" */
-            padding: 12px 14px 16px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
-            transform-origin: top left;
-            transform: scale(0.85) translateY(-8px);
-            opacity: 0;
-            transition: transform 0.22s cubic-bezier(0.34,1.4,0.64,1), opacity 0.18s ease;
-            max-height: 80vh;
+            border-radius: 24px 24px 0 0;
+            padding: 0 20px 72px;
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+            max-height: 85vh;
             overflow-y: auto;
+            transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
         }
-        .options-overlay.show .options-sheet { transform: scale(1) translateY(0); opacity: 1; }
-        .opt-handle { display: none; } /* no drag handle needed for dropdown */
+        .options-overlay.show .options-sheet { transform: translateX(-50%) translateY(0); }
+        .opt-handle { display: block; width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 14px auto 16px; }
         .opt-title { font-size: 10px; font-weight: 700; color: #bbb; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.6px; padding: 0 2px; }
         .opt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
         .opt-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; padding: 8px 2px; border-radius: 12px; transition: background 0.15s; }
@@ -340,38 +361,13 @@
 <div class="app-container">
     
     <div class="main-header">
-        <div class="h-left-group">
-            <button class="header-menu-btn" id="optionsFab" onclick="toggleOptions()">
-                <i class="fas fa-bars" id="optsFabIcon"></i>
-            </button>
-            <div class="h-left" id="userBtn" style="position:relative; cursor:pointer;">
-                <i class="fas fa-user-circle" style="font-size:26px;"></i>
-                <div class="user-dropdown" id="userDropdown">
-                    <div class="u-info">
-                        <img src="https://picsum.photos/id/64/100/100" class="u-avt" alt="Avatar">
-                        <h4>User Đáng Iu</h4>
-                        <p>Hội Viên: Khách VIP 👑</p>
-                        <div class="u-contact"><i class="fas fa-phone-alt"></i> 0987 654 321</div>
-                        <div class="u-contact"><i class="fas fa-envelope"></i> embenho@gmail.com</div>
-                    </div>
-                    <div class="u-menu">
-                        <div class="u-item" onclick="openHistory()"><i class="fas fa-route"></i> Chuyến đi của tôi</div>
-                        <div class="u-item" onclick="showToast('Thanh toán — Đang phát triển 💳')"><i class="fas fa-credit-card"></i> Thanh toán</div>
-                        <div class="u-item" onclick="showToast('Cài đặt — Đang phát triển ⚙️')"><i class="fas fa-cog"></i> Cài đặt</div>
-                        <div class="u-item" style="color: #e74c3c;" onclick="showToast('Đăng xuất — Đang phát triển 🔒')"><i class="fas fa-sign-out-alt"></i> Đăng xuất</div>
-                    </div>
-                </div>
-            </div>
+        <div class="util-search-bar" onclick="showToast('Tìm kiếm — Đang phát triển 🔍')">
+            <i class="fas fa-search"></i>
+            <span>Bạn muốn đi đâu?</span>
         </div>
-
         <div class="h-mid">LOCAL AI</div>
-
-        <div class="h-right" id="langBtn">
-            VI | EN <i class="fas fa-caret-down"></i>
-            <div class="lang-dropdown" id="langDropdown">
-                <div class="l-item active" onclick="showToast('Đang dùng Tiếng Việt 🇻🇳')">Tiếng Việt 🇻🇳</div>
-                <div class="l-item" onclick="showToast('Chuyển ngôn ngữ — Đang phát triển 🇬🇧')">English 🇬🇧</div>
-            </div>
+        <div class="h-right" id="aiHeaderBtn" onclick="showToast('AI Assistant — Đang phát triển 🤖')">
+            <i class="fas fa-robot" style="font-size:22px;"></i>
         </div>
     </div>
 
@@ -686,6 +682,17 @@
     <div class="options-backdrop"></div>
     <div class="options-sheet">
         <div class="opt-handle"></div>
+        <!-- User profile mini -->
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 4px 14px;border-bottom:1px solid #f0f0f0;margin-bottom:14px;">
+            <img src="https://picsum.photos/id/64/100/100" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);" alt="avt">
+            <div>
+                <div style="font-weight:700;font-size:14px;color:#333;">User Đáng Iu</div>
+                <div style="font-size:11px;color:#f39c12;font-weight:600;">Hội Viên: Khách VIP 👑</div>
+            </div>
+            <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;">
+                <div class="opt-item" style="padding:6px 10px;background:#f0f8ff;border-radius:10px;" onclick="toggleOptions();showToast('Cài đặt — Đang phát triển ⚙️')"><i class="fas fa-cog" style="color:var(--primary);font-size:16px;"></i></div>
+            </div>
+        </div>
         <div class="opt-title">Khám phá</div>
         <div class="opt-grid">
             <div class="opt-item" onclick="optionNav('home')">
@@ -936,26 +943,44 @@
     </div>
 </div>
 
+<!-- BOTTOM NAV BAR -->
+<nav class="bottom-nav" id="bottomNav">
+    <div class="bn-tab active" id="bnHome" onclick="showToast('Trang chủ — Đang phát triển 🏠')">
+        <i class="fas fa-home"></i>
+        <span>Trang chủ</span>
+    </div>
+    <div class="bn-tab" onclick="openHistory()">
+        <i class="fas fa-clock-rotate-left"></i>
+        <span>Lịch sử</span>
+    </div>
+    <div class="bn-tab-ai">
+        <button class="bn-ai-btn" onclick="showToast('AI Planner — Đang phát triển 🤖')">
+            <i class="fas fa-robot"></i>
+        </button>
+    </div>
+    <div class="bn-tab" onclick="showToast('Thông báo — Đang phát triển 🔔')">
+        <i class="fas fa-bell"></i>
+        <span>Thông báo</span>
+    </div>
+    <div class="bn-tab" id="userBtn" onclick="toggleOptions()">
+        <i class="fas fa-user-circle"></i>
+        <span>Tôi</span>
+    </div>
+</nav>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // JS Header
-    const uBtn = document.getElementById('userBtn'), uDrop = document.getElementById('userDropdown');
-    const lBtn = document.getElementById('langBtn'), lDrop = document.getElementById('langDropdown');
+    // JS Header — uDrop no longer used (merged into options overlay)
+    const uBtn = document.getElementById('userBtn');
 
-    let optionsOpen = false; // declared early so global click handler can reference it
+    let optionsOpen = false;
 
-    uBtn.onclick = function(e) { e.stopPropagation(); uDrop.classList.toggle('show'); lDrop.classList.remove('show'); };
-    lBtn.onclick = function(e) { e.stopPropagation(); lDrop.classList.toggle('show'); uDrop.classList.remove('show'); };
-    uDrop.onclick = function(e) { e.stopPropagation(); }; lDrop.onclick = function(e) { e.stopPropagation(); };
-    
     window.addEventListener('click', function(e) {
-        uDrop.classList.remove('show'); lDrop.classList.remove('show');
         if (e.target.id !== 'aiCitySearch') document.getElementById('citySuggestions').style.display = 'none';
         // Close options dropdown if click is outside
-        if (optionsOpen && !e.target.closest('#optionsOverlay') && !e.target.closest('#optionsFab')) {
+        if (optionsOpen && !e.target.closest('#optionsOverlay') && !e.target.closest('#userBtn')) {
             optionsOpen = false;
             document.getElementById('optionsOverlay').classList.remove('show');
-            document.getElementById('optionsFab').classList.remove('open');
         }
     });
 
@@ -1290,9 +1315,8 @@
     window.toggleOptions = function() {
         optionsOpen = !optionsOpen;
         const overlay = document.getElementById('optionsOverlay');
-        const fab = document.getElementById('optionsFab');
         overlay.classList.toggle('show', optionsOpen);
-        fab.classList.toggle('open', optionsOpen);
+        document.getElementById('userBtn').classList.toggle('active', !optionsOpen);
         // Dropdown doesn't lock scroll — only dims backdrop
     };
 
@@ -1556,7 +1580,6 @@
 
     let currentHistTab = 0;
     window.openHistory = function() {
-        uDrop.classList.remove('show');
         renderHistList();
         document.getElementById('historyModal').classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -1659,5 +1682,6 @@
     };
 
 </script>
+
 </body>
 </html>
