@@ -12,7 +12,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         html { height: auto; overflow-y: scroll; }
         body { background: #e9ecef; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-        .app-container { width: 100%; max-width: 414px; background: var(--bg); min-height: 100vh; height: auto; position: relative; overflow-x: hidden; overflow-y: visible; padding-bottom: 72px; padding-top: 68px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .app-container { width: 100%; max-width: 414px; background: #f0f5fa; min-height: 100vh; height: auto; position: relative; overflow-x: hidden; overflow-y: visible; padding-bottom: 72px; padding-top: 68px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 
         /* BOTTOM NAV BAR */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 414px; height: 56px; background: #ffffff; border-top: 1px solid #ebebeb; box-shadow: 0 -2px 12px rgba(0,0,0,0.07); display: flex; align-items: center; z-index: 3500; padding-bottom: env(safe-area-inset-bottom); }
@@ -27,7 +27,11 @@
         /* user-dropdown no longer used — removed */
 
         /* HEADER */
-        .main-header { background: linear-gradient(135deg, #1ba0e2, #007bff); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 10px; border-radius: 0 0 20px 20px; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 414px; z-index: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .main-header { background: linear-gradient(135deg, #1ba0e2, #007bff); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 10px; border-radius: 0; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 414px; z-index: 500; }
+        /* HERO BAND */
+        .hero-band { background: linear-gradient(160deg, #1ba0e2 0%, #0468d7 100%); padding: 14px 20px 52px; color: white; }
+        .hero-tagline { font-size: 13px; font-weight: 500; opacity: 0.88; }
+        .hero-title { font-size: 18px; font-weight: 800; margin-top: 2px; letter-spacing: 0.3px; }
         .h-top-row { display: none; }
         .h-left, .h-right { position: relative; cursor: pointer; flex-shrink: 0; }
         .h-left i { font-size: 26px; }
@@ -115,22 +119,21 @@
         .cat-pill.active { background: #3498db; }
         .cat-pill.active i, .cat-pill.active span { color: white; }
 
-        .ai-wrapper { position: relative; margin-top: 5px; }
-        .scroll-container { display: flex; gap: 16px; padding: 10px 16px 20px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; scroll-behavior: smooth; }
-        .scroll-container::-webkit-scrollbar { display: none; }
-        .card { min-width: 280px; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); scroll-snap-align: start; position: relative; cursor: pointer; }
-        .card-img { width: 100%; height: 140px; object-fit: cover; }
-        .card-badge { position: absolute; top: 10px; left: 10px; background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; z-index: 2; text-transform: capitalize; }
-        .card-body { padding: 12px; }
-        .card-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; display: flex; justify-content: space-between; }
-        .card-meta { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 8px; }
+        .ai-wrapper { position: relative; margin-top: 0; background: white; border-radius: 16px; margin: 0 14px 14px; padding: 4px 0 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .scroll-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px 12px 16px; }
+        .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.07); display: flex; flex-direction: column; position: relative; cursor: pointer; }
+        .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+        .card-badge { position: absolute; top: 7px; left: 7px; background: var(--primary); color: white; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: bold; z-index: 2; text-transform: capitalize; }
+        .card-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 4px; }
+        .card-title { font-weight: 700; font-size: 13px; color: #222; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-price { color: var(--primary); font-size: 13px; font-weight: 700; }
+        .card-meta { display: flex; justify-content: space-between; font-size: 10px; color: #888; }
 
-        .nav-btn { position: absolute; top: 55%; width: 35px; height: 35px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; color: var(--primary); }
-        .prev { left: 8px; } .next { right: 8px; }
+        .nav-btn { display: none; }
 
         /* BẢN ĐỒ & SPOTLIGHT */
-        #map { height: 200px; margin: 16px; border-radius: 16px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
-        .spotlight { margin: 16px; padding: 16px; background: white; border-radius: 16px; border-left: 5px solid #f39c12; }
+        #map { height: 200px; margin: 0 14px 14px; border-radius: 16px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
+        .spotlight { margin: 0 14px 14px; padding: 16px; background: white; border-radius: 16px; border-left: 5px solid #f39c12; }
         .leaflet-tooltip.my-label { background: white; border: none; border-radius: 8px; padding: 5px 10px; font-weight: bold; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
         /* PLACE DETAIL MODAL */
@@ -182,7 +185,7 @@
         .dm-btn-book:hover { filter: brightness(1.1); }
 
         /* UTILITY GRID CARD */
-        .utility-card { margin: 12px 16px 0; background: white; border-radius: 20px; padding: 18px 16px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .utility-card { margin: -28px 14px 16px; background: white; border-radius: 20px; padding: 18px 16px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); overflow: hidden; position: relative; z-index: 2; }
         .utility-pages { position: relative; }
         .utility-page { display: none; }
         .utility-page.active { display: block; }
@@ -196,6 +199,12 @@
         .util-dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; cursor: pointer; transition: background 0.2s, width 0.2s; }
         .util-dot.active { background: var(--primary); width: 18px; border-radius: 4px; }
         .util-swipe-hint { font-size: 10px; color: #bbb; text-align: center; margin-top: 4px; }
+        /* STATIC UTILITY GRID */
+        .util-static-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 2px; }
+        .util-grid-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .util-grid-title span { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: pointer; }
+        .section-title { padding: 12px 16px 4px; font-size: 15px; font-weight: 800; color: #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+        .section-title-link { font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; }
 
         /* HEADER MENU BUTTON */
         .h-left-group { display: flex; align-items: center; gap: 12px; }
@@ -305,6 +314,39 @@
         .bk-s-btn.outline { background: #f0f0f0; color: #333; }
         .bk-s-btn.primary { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; }
 
+        /* ===== AI CHAT PAGE ===== */
+        .ai-chat-modal { position: fixed; inset: 0; background: #eef2f7; z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
+        .ai-chat-modal.active { transform: translateX(0) !important; }
+        .ai-chat-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .ai-chat-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .ai-chat-info { flex: 1; }
+        .ai-chat-name { font-weight: 800; font-size: 15px; }
+        .ai-chat-status { font-size: 11px; opacity: 0.85; display: flex; align-items: center; gap: 5px; }
+        .ai-chat-status::before { content:''; width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; }
+        .ai-messages { flex: 1; overflow-y: auto; padding: 16px 14px 8px; display: flex; flex-direction: column; gap: 12px; }
+        .ai-msg-row { display: flex; gap: 8px; align-items: flex-end; }
+        .ai-msg-row.user { flex-direction: row-reverse; }
+        .ai-msg-bot-icon { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#1ba0e2,#007bff); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; flex-shrink: 0; margin-bottom: 2px; }
+        .ai-bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 13px; line-height: 1.5; color: #222; }
+        .ai-msg-row:not(.user) .ai-bubble { background: white; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .ai-msg-row.user .ai-bubble { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; border-bottom-right-radius: 4px; }
+        .ai-msg-time { font-size: 10px; color: #bbb; margin-top: 2px; text-align: right; }
+        .ai-msg-row:not(.user) .ai-msg-time { text-align: left; padding-left: 38px; }
+        .ai-typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; background: white; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .ai-typing span { width: 7px; height: 7px; border-radius: 50%; background: #bbb; animation: typing-bounce 1.2s infinite; }
+        .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing-bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+        .ai-quick-replies { display: flex; gap: 8px; padding: 0 14px 10px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+        .ai-quick-replies::-webkit-scrollbar { display: none; }
+        .ai-qr-btn { white-space: nowrap; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--primary); color: var(--primary); background: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.15s; flex-shrink: 0; }
+        .ai-qr-btn:active { background: var(--primary); color: white; }
+        .ai-input-bar { background: white; border-top: 1px solid #eee; padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-bottom: 56px; }
+        .ai-input { flex: 1; border: 1.5px solid #e0e6ee; border-radius: 22px; padding: 10px 16px; font-size: 13px; outline: none; font-family: 'Inter', sans-serif; background: #f8fafc; resize: none; max-height: 80px; overflow-y: auto; }
+        .ai-input:focus { border-color: var(--primary); background: white; }
+        .ai-send-btn { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#1ba0e2,#007bff); border: none; color: white; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.15s; }
+        .ai-send-btn:active { transform: scale(0.92); }
+
         /* ===== AI PLANNER PAGE ===== */
         .ai-planner-modal { position: fixed; inset: 0; background: #f8f9fa; z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
         .ai-planner-modal.active { transform: translateX(0) !important; }
@@ -397,9 +439,15 @@
             <span>Bạn muốn đi đâu?</span>
         </div>
         <div class="h-mid">LOCAL AI</div>
-        <div class="h-right" id="aiHeaderBtn" onclick="openAIPlanner()">
+        <div class="h-right" id="aiHeaderBtn" onclick="openAIChat()">
             <i class="fas fa-robot" style="font-size:22px;"></i>
         </div>
+    </div>
+
+    <!-- HERO BAND -->
+    <div class="hero-band">
+        <div class="hero-tagline">Chào mừng đến với</div>
+        <div class="hero-title">LOCAL AI ✈️</div>
     </div>
 
     <!-- UTILITY CARD -->
@@ -545,7 +593,7 @@
 <!-- planner-box removed — moved to AI Planner modal -->
 
     <div class="ai-wrapper">
-        <h3 style="padding: 0 16px;">LOCAL AI PICK FOR YOU ✨</h3>
+        <div class="section-title">LOCAL AI PICK FOR YOU ✨ <span class="section-title-link" onclick="showToast('Xem thêm — Đang phát triển')">Xem thêm ›</span></div>
         
         <div class="city-search-box">
             <i class="fas fa-map-marker-alt"></i>
@@ -564,7 +612,7 @@
         <div class="scroll-container" id="aiList"></div>
     </div>
 
-    <h3 style="padding: 0 16px; margin-top: 10px;">Nearby Location 📍</h3>
+    <div class="section-title" style="margin-top: 8px;">Nearby Location 📍</div>
     <div id="map"></div>
 
     <div class="spotlight">
@@ -948,6 +996,45 @@
     </div>
 </div>
 
+<!-- ===== AI CHAT PAGE ===== -->
+<div class="ai-chat-modal" id="aiChatModal">
+    <div class="ai-chat-header">
+        <button class="bk-back" onclick="closeAIChat()"><i class="fas fa-arrow-left"></i></button>
+        <div class="ai-chat-avatar"><i class="fas fa-robot"></i></div>
+        <div class="ai-chat-info">
+            <div class="ai-chat-name">LOCAL AI Assistant</div>
+            <div class="ai-chat-status">Đang hoạt động</div>
+        </div>
+    </div>
+
+    <div class="ai-messages" id="aiMessages">
+        <!-- Welcome message -->
+        <div class="ai-msg-row">
+            <div class="ai-msg-bot-icon"><i class="fas fa-robot"></i></div>
+            <div>
+                <div class="ai-bubble">Xin chào! Tôi là <b>LOCAL AI</b> 👋<br>Tôi có thể giúp bạn khám phá địa điểm, tìm khách sạn, lên lịch trình và tư vấn du lịch. Bạn muốn đi đâu hôm nay? ✈️</div>
+                <div class="ai-msg-time">Vừa xong</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick reply chips -->
+    <div class="ai-quick-replies" id="aiQuickReplies">
+        <button class="ai-qr-btn" onclick="sendQuickReply(this, 'Gợi ý địa điểm ở Đà Nẵng 🏖️')">Gợi ý Đà Nẵng 🏖️</button>
+        <button class="ai-qr-btn" onclick="sendQuickReply(this, 'Tìm khách sạn giá rẻ ở Hà Nội 🏨')">Khách sạn Hà Nội 🏨</button>
+        <button class="ai-qr-btn" onclick="sendQuickReply(this, 'Lịch trình 3 ngày Sài Gòn 🗺️')">Lịch trình Sài Gòn 🗺️</button>
+        <button class="ai-qr-btn" onclick="sendQuickReply(this, 'Ẩm thực Hội An ngon nhất 🍜')">Ẩm thực Hội An 🍜</button>
+        <button class="ai-qr-btn" onclick="sendQuickReply(this, 'Mùa nào đẹp nhất ở Đà Lạt? 🌸')">Đà Lạt mùa nào 🌸</button>
+    </div>
+
+    <div class="ai-input-bar">
+        <textarea class="ai-input" id="aiChatInput" placeholder="Nhập tin nhắn..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+        <button class="ai-send-btn" onclick="sendAIMessage()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
 <!-- ===== HISTORY PAGE ===== -->
 <div class="history-modal" id="historyModal">
     <div class="hist-header">
@@ -1234,7 +1321,8 @@
                 <span class="card-badge">${item.c}</span>
                 <img src="${item.images[0]}" class="card-img">
                 <div class="card-body">
-                    <div class="card-title">${item.n} <span style="color:var(--primary)">${item.p > 0 ? item.p.toLocaleString('vi-VN')+'đ' : 'Free'}</span></div>
+                    <div class="card-title">${item.n}</div>
+                    <div class="card-price">${item.p > 0 ? item.p.toLocaleString('vi-VN')+'đ' : 'Miễn phí'}</div>
                     <div class="card-meta"><span>⭐ ${item.r}</span><span>📍 ${item.d}km</span></div>
                 </div>
             </div>
@@ -1332,7 +1420,8 @@
 
     render(allPlaces);
 
-    // === UTILITY GRID ===
+
+    // === UTILITY GRID SWIPE ===
     let currentUtilPage = 0;
     const utilPages = document.querySelectorAll('.utility-page');
     const utilDotEls = document.querySelectorAll('.util-dot');
@@ -1345,7 +1434,6 @@
         utilDotEls[currentUtilPage].classList.add('active');
     };
 
-    // Swipe support for utility card
     let utilTouchStartX = 0;
     const utilCard = document.getElementById('utilityCard');
     utilCard.addEventListener('touchstart', e => { utilTouchStartX = e.touches[0].clientX; }, { passive: true });
@@ -1676,7 +1764,7 @@
 
     // ===== NAVIGATION =====
     function closeAllModals() {
-        ['aiPlannerModal','historyModal','notifModal'].forEach(id => {
+        ['aiChatModal','aiPlannerModal','historyModal','notifModal'].forEach(id => {
             document.getElementById(id)?.classList.remove('active');
         });
         if (optionsOpen) toggleOptions();
@@ -1706,6 +1794,92 @@
     };
     window.closeAIPlanner = function() {
         document.getElementById('aiPlannerModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+        setActiveTab('home');
+    };
+
+    // ===== AI CHAT =====
+    const aiResponses = [
+        { keys: ['đà nẵng','da nang'], reply: '🏖️ <b>Đà Nẵng</b> có rất nhiều điểm tuyệt vời!\n\n• <b>Bãi biển Mỹ Khê</b> — top 6 bãi biển đẹp nhất châu Á\n• <b>Cầu Rồng</b> — biểu tượng của thành phố\n• <b>Bà Nà Hills</b> — Cầu Vàng nổi tiếng\n• <b>Phố cổ Hội An</b> — cách 30 phút\n\nBạn muốn tôi lên lịch trình chi tiết không? 😊' },
+        { keys: ['hà nội','ha noi','hanoi'], reply: '🏛️ <b>Hà Nội</b> — thủ đô ngàn năm văn hiến!\n\n• <b>Hồ Hoàn Kiếm</b> & đền Ngọc Sơn\n• <b>Phố cổ 36 phố phường</b>\n• <b>Lăng Chủ tịch Hồ Chí Minh</b>\n• <b>Văn Miếu Quốc Tử Giám</b>\n\nKhách sạn giá tốt tại Hà Nội dao động từ <b>300k–800k/đêm</b>. Bạn cần tôi tìm cụ thể không?' },
+        { keys: ['sài gòn','saigon','hcm','hồ chí minh'], reply: '🌆 <b>Sài Gòn</b> — thành phố năng động!\n\n• <b>Quận 1</b>: Nhà thờ Đức Bà, Bưu điện Trung tâm\n• <b>Bùi Viện</b>: phố Tây sầm uất về đêm\n• <b>Chợ Bến Thành</b>: mua sắm & ẩm thực\n• <b>Landmark 81</b>: view toàn thành phố\n\nLịch trình 3 ngày đầy đủ — bạn muốn tôi soạn không? ✨' },
+        { keys: ['đà lạt','da lat'], reply: '🌸 <b>Đà Lạt</b> đẹp nhất vào:\n\n• <b>Tháng 11–1</b>: mùa hoa dã quỳ vàng rực\n• <b>Tháng 12–2</b>: không khí se lạnh lý tưởng\n• <b>Tránh tháng 6–9</b>: mùa mưa nhiều\n\nNhiệt độ quanh năm 15–24°C, rất dễ chịu 🍃' },
+        { keys: ['hội an','hoi an'], reply: '🏮 <b>Hội An</b> — phố cổ UNESCO!\n\nẨm thực nhất định phải thử:\n• <b>Cao lầu</b> — đặc sản số 1\n• <b>Mì Quảng</b> — đậm đà hương vị\n• <b>Cơm gà Hội An</b> — nức tiếng\n• <b>Bánh mì Phượng</b> — CNN bình chọn ngon nhất\n\nBuổi tối thả đèn hoa đăng trên sông Hoài rất lãng mạn 🌙' },
+        { keys: ['khách sạn','hotel'], reply: '🏨 Tôi có thể tìm khách sạn phù hợp cho bạn!\n\nBạn cho tôi biết:\n1. <b>Thành phố</b> muốn đến?\n2. <b>Ngân sách</b> mỗi đêm?\n3. <b>Số người</b> lưu trú?\n\nTôi sẽ gợi ý những lựa chọn tốt nhất cho bạn 🌟' },
+        { keys: ['vé','bay','chuyến bay'], reply: '✈️ Để đặt vé máy bay tốt nhất:\n\n• <b>Đặt sớm 3–6 tuần</b> để có giá tốt\n• <b>VietJet, Bamboo, Vietnam Airlines</b> là 3 hãng chính\n• Bay <b>thứ 3–4</b> thường rẻ hơn cuối tuần\n\nBạn muốn bay từ đâu đến đâu? Tôi tìm giá ngay! 🔍' },
+    ];
+
+    function getAIReply(msg) {
+        const lower = msg.toLowerCase();
+        for (const r of aiResponses) {
+            if (r.keys.some(k => lower.includes(k))) return r.reply;
+        }
+        return '🤖 Cảm ơn câu hỏi của bạn!\n\nHiện tại tôi đang được cập nhật thêm kiến thức. Bạn có thể hỏi tôi về các địa điểm như <b>Đà Nẵng, Hà Nội, Sài Gòn, Đà Lạt, Hội An</b> hoặc về <b>khách sạn, vé máy bay</b> nhé! 😊';
+    }
+
+    function appendMessage(text, isUser) {
+        const msgs = document.getElementById('aiMessages');
+        const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        const row = document.createElement('div');
+        row.className = 'ai-msg-row' + (isUser ? ' user' : '');
+        if (isUser) {
+            row.innerHTML = `<div><div class="ai-bubble">${text}</div><div class="ai-msg-time">${time}</div></div>`;
+        } else {
+            row.innerHTML = `
+                <div class="ai-msg-bot-icon"><i class="fas fa-robot"></i></div>
+                <div><div class="ai-bubble">${text.replace(/\n/g,'<br>')}</div><div class="ai-msg-time">${time}</div></div>`;
+        }
+        msgs.appendChild(row);
+        msgs.scrollTop = msgs.scrollHeight;
+        return row;
+    }
+
+    function showTyping() {
+        const msgs = document.getElementById('aiMessages');
+        const row = document.createElement('div');
+        row.className = 'ai-msg-row';
+        row.id = 'typingIndicator';
+        row.innerHTML = `<div class="ai-msg-bot-icon"><i class="fas fa-robot"></i></div><div class="ai-typing"><span></span><span></span><span></span></div>`;
+        msgs.appendChild(row);
+        msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function hideTyping() {
+        document.getElementById('typingIndicator')?.remove();
+    }
+
+    window.sendAIMessage = function() {
+        const input = document.getElementById('aiChatInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        input.style.height = 'auto';
+        appendMessage(text, true);
+        document.getElementById('aiQuickReplies').style.display = 'none';
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            appendMessage(getAIReply(text), false);
+        }, 1000 + Math.random() * 600);
+    };
+
+    window.sendQuickReply = function(btn, text) {
+        appendMessage(text, true);
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            appendMessage(getAIReply(text), false);
+        }, 900 + Math.random() * 500);
+    };
+
+    window.openAIChat = function() {
+        document.getElementById('aiChatModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeAIChat = function() {
+        document.getElementById('aiChatModal').classList.remove('active');
         document.body.style.overflow = 'auto';
         setActiveTab('home');
     };
