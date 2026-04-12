@@ -8,15 +8,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #1ba0e2; --bg: #f8f9fa; --surface: #ffffff; --radius: 20px; }
+        :root {
+            --primary: #1ba0e2;
+            --bg: #f5f6f8;
+            --surface: #ffffff;
+            --surface2: #f0f2f5;
+            --text: #111111;
+            --text2: #555555;
+            --text3: #999999;
+            --border: #e8e8e8;
+            --shadow: rgba(0,0,0,0.07);
+            --radius: 20px;
+        }
+        [data-theme="dark"] {
+            --bg: #111111;
+            --surface: #1c1c1e;
+            --surface2: #2c2c2e;
+            --text: #f2f2f7;
+            --text2: #ababab;
+            --text3: #636366;
+            --border: #2c2c2e;
+            --shadow: rgba(0,0,0,0.4);
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         html { height: auto; overflow-y: scroll; }
-        body { background: #e9ecef; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-        .app-container { width: 100%; max-width: 414px; background: #f0f5fa; min-height: 100vh; height: auto; position: relative; overflow-x: hidden; overflow-y: visible; padding-bottom: 72px; padding-top: 68px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        body { background: #000; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; -webkit-overflow-scrolling: touch; transition: background 0.3s; }
+        .app-container { width: 100%; max-width: 414px; background: var(--bg); min-height: 100vh; height: auto; position: relative; overflow-x: hidden; overflow-y: visible; padding-bottom: 72px; padding-top: 68px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: background 0.3s; }
 
         /* BOTTOM NAV BAR */
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 414px; height: 56px; background: #ffffff; border-top: 1px solid #ebebeb; box-shadow: 0 -2px 12px rgba(0,0,0,0.07); display: flex; align-items: center; z-index: 3500; padding-bottom: env(safe-area-inset-bottom); }
-        .bn-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; padding: 6px 0; transition: color 0.15s; color: #aaa; }
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 414px; height: 56px; background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -2px 12px var(--shadow); display: flex; align-items: center; z-index: 3500; padding-bottom: env(safe-area-inset-bottom); transition: background 0.3s, border-color 0.3s; }
+        .bn-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; padding: 6px 0; transition: color 0.15s; color: var(--text3); }
         .bn-tab i { font-size: 20px; }
         .bn-tab span { font-size: 10px; font-weight: 600; line-height: 1; }
         .bn-tab.active { color: var(--primary); }
@@ -29,9 +50,55 @@
         /* HEADER */
         .main-header { background: linear-gradient(135deg, #1ba0e2, #007bff); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 10px; border-radius: 0; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 414px; z-index: 500; }
         /* HERO BAND */
-        .hero-band { background: linear-gradient(160deg, #1ba0e2 0%, #0468d7 100%); padding: 14px 20px 52px; color: white; }
-        .hero-tagline { font-size: 13px; font-weight: 500; opacity: 0.88; }
+        .hero-band { background: linear-gradient(160deg, #1ba0e2 0%, #0468d7 100%); padding: 14px 20px 44px; color: white; }
+        .hero-tagline { font-size: 12px; font-weight: 500; opacity: 0.80; text-transform: uppercase; letter-spacing: 0.5px; }
         .hero-title { font-size: 18px; font-weight: 800; margin-top: 2px; letter-spacing: 0.3px; }
+        .hero-chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .hero-chip { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(4px); }
+        .hero-chip.budget { background: rgba(255,255,255,0.25); }
+        .hero-chip.loc-chip { background: rgba(255,255,255,0.3); cursor: pointer; border: 1.5px solid rgba(255,255,255,0.4); }
+        .hero-chip.loc-chip:active { opacity: 0.82; transform: scale(0.97); }
+        /* Location Sheet */
+        .location-sheet { position: fixed; inset: 0; z-index: 9500; display: none; align-items: flex-end; }
+        .location-sheet.active { display: flex; }
+        .location-sheet-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.52); }
+        .location-sheet-panel { position: relative; background: var(--surface); border-radius: 24px 24px 0 0; padding: 22px 20px 32px; z-index: 1; width: 100%; max-width: 414px; margin: 0 auto; }
+        .ls-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 18px; }
+        .ls-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .ls-header button { background: none; border: none; color: var(--text3); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+        .ls-subtitle { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+        .ls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+        .ls-city { background: var(--surface2); border-radius: 14px; padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 7px; cursor: pointer; font-size: 24px; transition: 0.15s; border: 2px solid transparent; }
+        .ls-city span { font-size: 12px; font-weight: 600; color: var(--text); }
+        .ls-city:active { opacity: 0.8; }
+        .ls-city.active-loc { background: var(--primary); border-color: var(--primary); }
+        .ls-city.active-loc span { color: white; }
+        .ls-gps-btn { background: var(--surface2); border-radius: 12px; padding: 14px; text-align: center; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; }
+        .ls-gps-btn:active { opacity: 0.8; }
+        /* VIDEO FEED */
+        .video-feed { margin: 0 14px 14px; }
+        .video-scroll { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+        .video-scroll::-webkit-scrollbar { display: none; }
+        .video-card { min-width: 150px; height: 210px; border-radius: 14px; position: relative; overflow: hidden; flex-shrink: 0; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+        .video-card img { width: 100%; height: 100%; object-fit: cover; }
+        .video-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 55%, transparent 100%); }
+        .video-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 34px; height: 34px; background: rgba(255,255,255,0.28); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; border: 1.5px solid rgba(255,255,255,0.5); }
+        .video-info { position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; }
+        .video-tag { font-size: 10px; background: var(--primary); border-radius: 6px; padding: 2px 7px; display: inline-block; margin-bottom: 4px; font-weight: 600; }
+        .video-title { font-size: 12px; font-weight: 700; line-height: 1.3; margin-bottom: 3px; }
+        .video-views { font-size: 10px; opacity: 0.85; display: flex; align-items: center; gap: 4px; }
+        /* LỊCH TRÌNH PAGE */
+        .itinerary-trip-header { background: linear-gradient(135deg,#1ba0e2,#007bff); margin: 12px 14px; border-radius: 14px; padding: 16px; color: white; }
+        .itin-trip-name { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+        .itin-trip-meta { font-size: 12px; opacity: 0.85; display: flex; gap: 14px; }
+        .itin-day-block { margin: 0 14px 14px; }
+        .itin-day-label { font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #e8f4ff; }
+        .itin-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; background: var(--surface); border-radius: 12px; margin-bottom: 8px; box-shadow: 0 1px 6px var(--shadow); transition: background 0.3s; }
+        .itin-time { font-size: 11px; font-weight: 700; color: #888; min-width: 40px; margin-top: 2px; }
+        .itin-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+        .itin-body { flex: 1; }
+        .itin-place { font-size: 13px; font-weight: 700; color: var(--text); }
+        .itin-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
         .h-top-row { display: none; }
         .h-left, .h-right { position: relative; cursor: pointer; flex-shrink: 0; }
         .h-left i { font-size: 26px; }
@@ -50,16 +117,16 @@
         .util-search-bar i { color: #aaa; font-size: 15px; }
         .util-search-bar span { flex: 1; font-size: 13px; color: #aaa; font-weight: 500; }
         .util-mic { color: var(--primary) !important; }
-        .u-info { padding: 20px; text-align: center; border-bottom: 1px solid #eee; background: #f8f9fa; }
+        .u-info { padding: 20px; text-align: center; border-bottom: 1px solid var(--border); background: var(--surface2); }
         .u-avt { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 3px solid var(--primary); }
-        .u-info h4 { color: #333; margin-bottom: 5px; font-size: 18px; }
+        .u-info h4 { color: var(--text); margin-bottom: 5px; font-size: 18px; }
         .u-info p { font-size: 12px; color: #f39c12; font-weight: bold; margin-bottom: 10px; }
-        .u-contact { font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; justify-content: center; }
+        .u-contact { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 8px; margin-bottom: 6px; justify-content: center; }
         .u-contact i { color: var(--primary); }
         .u-menu { padding: 10px 0; }
-        .u-item { padding: 12px 20px; font-size: 14px; color: #333; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; font-weight: 500; }
-        .u-item i { width: 20px; color: #666; font-size: 16px; }
-        .u-item:hover { background: #f0f8ff; color: var(--primary); }
+        .u-item { padding: 12px 20px; font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .u-item i { width: 20px; color: var(--text3); font-size: 16px; }
+        .u-item:hover { background: var(--surface2); color: var(--primary); }
         .u-item:hover i { color: var(--primary); }
         
         .lang-dropdown { position: absolute; top: 30px; right: 0; background: white; width: 140px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; cursor: default; }
@@ -76,7 +143,7 @@
 
         /* AI TRIP PLANNER MỚI */
         .planner-box { margin: 0 16px 16px; background: white; border-radius: 16px; padding: 20px 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .planner-header { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        .planner-header { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px;}
         
         .p-section { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
         .p-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
@@ -112,28 +179,30 @@
         .city-sugg-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f8f9fa; font-size: 13px; font-weight: 500; color: #555; transition: 0.2s;}
         .city-sugg-item:hover { background: #f0f8ff; color: var(--primary); padding-left: 20px;}
 
-        .filter-category-bar { display: flex; gap: 12px; padding: 10px 16px 15px; overflow-x: auto; scrollbar-width: none; }
-        .cat-pill { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 70px; padding: 10px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
-        .cat-pill i { font-size: 20px; color: #3498db; }
+        .region-tab-bar { display: flex; gap: 8px; padding: 10px 12px 14px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .region-tab-bar::-webkit-scrollbar { display: none; }
+        .region-tab { padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border); font-size: 12px; font-weight: 700; color: var(--text2); cursor: pointer; white-space: nowrap; background: var(--surface); transition: 0.15s; flex-shrink: 0; }
+        .region-tab.active { background: var(--primary); border-color: var(--primary); color: white; }
+        .region-tab:active { opacity: 0.8; }
         .cat-pill span { font-size: 11px; color: #666; font-weight: 500; }
         .cat-pill.active { background: #3498db; }
         .cat-pill.active i, .cat-pill.active span { color: white; }
 
-        .ai-wrapper { position: relative; margin-top: 0; background: white; border-radius: 16px; margin: 0 14px 14px; padding: 4px 0 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .ai-wrapper { position: relative; margin-top: 0; background: var(--surface); border-radius: 16px; margin: 0 14px 14px; padding: 4px 0 8px; box-shadow: 0 2px 10px var(--shadow); transition: background 0.3s; }
         .scroll-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px 12px 16px; }
-        .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.07); display: flex; flex-direction: column; position: relative; cursor: pointer; }
+        .card { background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px var(--shadow); display: flex; flex-direction: column; position: relative; cursor: pointer; transition: background 0.3s; }
         .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
         .card-badge { position: absolute; top: 7px; left: 7px; background: var(--primary); color: white; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: bold; z-index: 2; text-transform: capitalize; }
         .card-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 4px; }
-        .card-title { font-weight: 700; font-size: 13px; color: #222; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-title { font-weight: 700; font-size: 13px; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .card-price { color: var(--primary); font-size: 13px; font-weight: 700; }
-        .card-meta { display: flex; justify-content: space-between; font-size: 10px; color: #888; }
+        .card-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); }
 
         .nav-btn { display: none; }
 
         /* BẢN ĐỒ & SPOTLIGHT */
         #map { height: 200px; margin: 0 14px 14px; border-radius: 16px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; }
-        .spotlight { margin: 0 14px 14px; padding: 16px; background: white; border-radius: 16px; border-left: 5px solid #f39c12; }
+        .spotlight { margin: 0 14px 14px; padding: 16px; background: var(--surface); border-radius: 16px; border-left: 5px solid #f39c12; transition: background 0.3s; }
         .leaflet-tooltip.my-label { background: white; border: none; border-radius: 8px; padding: 5px 10px; font-weight: bold; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
         /* PLACE DETAIL MODAL */
@@ -184,27 +253,97 @@
         .dm-btn-book { flex: 2; background: linear-gradient(135deg, #1ba0e2, #007bff); border: none; padding: 14px; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s;}
         .dm-btn-book:hover { filter: brightness(1.1); }
 
-        /* UTILITY GRID CARD */
-        .utility-card { margin: -28px 14px 16px; background: white; border-radius: 20px; padding: 18px 16px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); overflow: hidden; position: relative; z-index: 2; }
-        .utility-pages { position: relative; }
-        .utility-page { display: none; }
-        .utility-page.active { display: block; }
-        .utility-row { display: flex; justify-content: space-around; margin-bottom: 14px; }
-        .util-item { display: flex; flex-direction: column; align-items: center; gap: 7px; cursor: pointer; flex: 1; min-width: 0; }
-        .util-icon { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; transition: transform 0.15s, box-shadow 0.15s; }
-        .util-icon.sm { width: 42px; height: 42px; font-size: 17px; }
-        .util-item:active .util-icon { transform: scale(0.92); }
-        .util-item span { font-size: 11px; color: #444; font-weight: 500; text-align: center; line-height: 1.3; }
-        .util-dots { display: flex; justify-content: center; gap: 6px; padding-top: 4px; }
-        .util-dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; cursor: pointer; transition: background 0.2s, width 0.2s; }
-        .util-dot.active { background: var(--primary); width: 18px; border-radius: 4px; }
-        .util-swipe-hint { font-size: 10px; color: #bbb; text-align: center; margin-top: 4px; }
-        /* STATIC UTILITY GRID */
-        .util-static-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 2px; }
-        .util-grid-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .util-grid-title span { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: none; letter-spacing: 0; cursor: pointer; }
-        .section-title { padding: 12px 16px 4px; font-size: 15px; font-weight: 800; color: #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+        /* WALLET CARD */
+        .wallet-card { margin: -28px 14px 16px; background: var(--surface); border-radius: 20px; padding: 16px 18px; box-shadow: 0 4px 24px var(--shadow); position: relative; z-index: 2; display: flex; align-items: center; gap: 14px; transition: background 0.3s; }
+        .wallet-icon { width: 50px; height: 50px; border-radius: 15px; background: linear-gradient(135deg,#1ba0e2,#0468d7); display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; }
+        .wallet-info { flex: 1; min-width: 0; }
+        .wallet-label { font-size: 11px; color: var(--text3); font-weight: 500; margin-bottom: 3px; letter-spacing: 0.3px; }
+        .wallet-balance { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; line-height: 1.1; }
+        .wallet-balance .currency { font-size: 13px; font-weight: 600; color: var(--text2); margin-left: 1px; }
+        .wallet-btns { display: flex; flex-direction: column; gap: 7px; flex-shrink: 0; }
+        .wallet-btn { border: none; border-radius: 10px; padding: 8px 13px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform 0.15s, opacity 0.15s; white-space: nowrap; font-family: inherit; }
+        .wallet-btn:active { transform: scale(0.95); opacity: 0.85; }
+        .wallet-btn.topup { background: linear-gradient(135deg,#1ba0e2,#0468d7); color: white; }
+        .wallet-btn.voucher-btn { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
+        .section-title { padding: 12px 16px 4px; font-size: 15px; font-weight: 800; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
         .section-title-link { font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; }
+
+        /* THEME TOGGLE */
+        .theme-toggle-btn { position: absolute; top: 14px; right: 60px; width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,0.2); color: white; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 501; transition: background 0.2s; }
+        .theme-toggle-btn:active { background: rgba(255,255,255,0.35); }
+        .theme-toggle-row { display:flex;align-items:center;justify-content:space-between;padding:12px 4px 16px;border-bottom:1px solid var(--border);margin-bottom:14px;cursor:pointer; }
+        .theme-row-icon { width:36px;height:36px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2); }
+        .theme-switch-track { width:44px;height:24px;border-radius:12px;background:var(--border);position:relative;transition:background 0.2s;flex-shrink:0; }
+        .theme-switch-track.on { background:var(--primary); }
+        .theme-switch-knob { width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+        .theme-switch-track.on .theme-switch-knob { left:22px; }
+
+        /* VOUCHER PAGE */
+        .voucher-modal { position: fixed; inset: 0; background: var(--bg); z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), background 0.3s; display: flex; flex-direction: column; }
+        .voucher-modal.active { transform: translateX(0) !important; }
+        .voucher-tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .voucher-tab { flex: 1; padding: 12px 6px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
+        .voucher-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .voucher-list { flex: 1; overflow-y: auto; padding: 14px 14px 72px; display: flex; flex-direction: column; gap: 12px; }
+        .voucher-card { background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px var(--shadow); display: flex; position: relative; cursor: pointer; transition: background 0.3s; }
+        .voucher-card::before { content: ''; position: absolute; left: 88px; top: 0; bottom: 0; width: 1px; background: repeating-linear-gradient(to bottom, var(--bg) 0px, var(--bg) 6px, var(--border) 6px, var(--border) 12px); z-index: 1; }
+        .voucher-left { width: 88px; background: linear-gradient(135deg,#1ba0e2,#007bff); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 8px; color: white; flex-shrink: 0; }
+        .voucher-discount { font-size: 22px; font-weight: 900; line-height: 1; }
+        .voucher-unit { font-size: 10px; font-weight: 600; opacity: 0.9; }
+        .voucher-right { flex: 1; padding: 12px 14px; }
+        .voucher-name { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+        .voucher-cond { font-size: 11px; color: var(--text3); margin-bottom: 8px; line-height: 1.4; }
+        .voucher-bottom { display: flex; justify-content: space-between; align-items: center; }
+        .voucher-exp { font-size: 10px; color: var(--text3); }
+        .voucher-use-btn { font-size: 11px; font-weight: 700; color: var(--primary); border: 1.5px solid var(--primary); border-radius: 20px; padding: 4px 12px; cursor: pointer; background: transparent; }
+        .voucher-tag { position: absolute; top: 8px; right: 8px; font-size: 9px; font-weight: 700; background: #e74c3c; color: white; border-radius: 6px; padding: 2px 7px; }
+        .voucher-tag.new { background: var(--primary); }
+
+        /* EVENTS PAGE */
+        .events-modal { position: fixed; inset: 0; background: var(--bg); z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), background 0.3s; display: flex; flex-direction: column; }
+        .events-modal.active { transform: translateX(0) !important; }
+        .events-list { flex: 1; overflow-y: auto; padding: 14px 14px 72px; display: flex; flex-direction: column; gap: 14px; }
+        .event-card { background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px var(--shadow); cursor: pointer; transition: background 0.3s; }
+        .event-img { width: 100%; height: 130px; object-fit: cover; display: block; }
+        .event-body { padding: 12px 14px; }
+        .event-name { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+        .event-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+        .event-row i { color: var(--primary); width: 13px; }
+        .event-tag-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .event-tag { font-size: 10px; font-weight: 600; border-radius: 6px; padding: 3px 9px; background: var(--surface2); color: var(--text2); }
+        .event-tag.hot { background: #ffe8e8; color: #e74c3c; }
+        .event-tag.free { background: #e8f8ee; color: #27ae60; }
+        .event-sold-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .event-sold-fill { height: 100%; background: linear-gradient(90deg,#1ba0e2,#007bff); border-radius: 2px; }
+
+        /* CHECKIN MODAL */
+        .checkin-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3200; display: none; align-items: flex-end; justify-content: center; }
+        .checkin-overlay.active { display: flex; }
+        .checkin-sheet { background: var(--surface); border-radius: 24px 24px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 414px; transition: background 0.3s; }
+        .checkin-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+        .checkin-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+        .checkin-sub { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+        .checkin-stars { display: flex; gap: 8px; justify-content: center; font-size: 32px; margin-bottom: 16px; cursor: pointer; }
+        .checkin-star { color: var(--border); transition: color 0.15s; }
+        .checkin-star.lit { color: #f39c12; }
+        .checkin-textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 13px; font-family: 'Inter',sans-serif; background: var(--surface2); color: var(--text); resize: none; outline: none; margin-bottom: 12px; }
+        .checkin-textarea:focus { border-color: var(--primary); }
+        .checkin-submit { width: 100%; padding: 14px; background: linear-gradient(135deg,#1ba0e2,#007bff); border: none; border-radius: 14px; color: white; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+        /* PREFERENCES PAGE */
+        .pref-modal { position: fixed; inset: 0; background: var(--bg); z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), background 0.3s; display: flex; flex-direction: column; }
+        .pref-modal.active { transform: translateX(0) !important; }
+        .pref-body { flex: 1; overflow-y: auto; padding: 16px 16px 80px; }
+        .pref-section { margin-bottom: 24px; }
+        .pref-section-title { font-size: 13px; font-weight: 800; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .pref-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pref-chip { padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: 0.15s; background: var(--surface); display: flex; align-items: center; gap: 6px; }
+        .pref-chip.selected { background: var(--primary); border-color: var(--primary); color: white; }
+        .pref-chip:active { opacity: 0.75; }
+        .pref-budget-row { display: flex; gap: 8px; }
+        .pref-budget-btn { flex: 1; padding: 10px 6px; border-radius: 12px; border: 1.5px solid var(--border); text-align: center; font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; background: var(--surface); transition: 0.15s; }
+        .pref-budget-btn.selected { background: var(--primary); border-color: var(--primary); color: white; }
+        .pref-save-btn { width: 100%; padding: 14px; background: linear-gradient(135deg,#1ba0e2,#007bff); border: none; border-radius: 14px; color: white; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
 
         /* HEADER MENU BUTTON */
         .h-left-group { display: flex; align-items: center; gap: 12px; }
@@ -220,28 +359,22 @@
         .options-overlay.show .options-backdrop { opacity: 1; }
         /* Bottom sheet — slide up from bottom */
         .options-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
+            position: absolute; bottom: 0; left: 50%;
             transform: translateX(-50%) translateY(100%);
-            width: 100%;
-            max-width: 414px;
-            background: white;
-            border-radius: 24px 24px 0 0;
+            width: 100%; max-width: 414px;
+            background: var(--surface); border-radius: 24px 24px 0 0;
             padding: 0 20px 72px;
-            box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
-            max-height: 85vh;
-            overflow-y: auto;
-            transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+            max-height: 85vh; overflow-y: auto;
+            transition: transform 0.35s cubic-bezier(0.32,0.72,0,1), background 0.3s;
         }
         .options-overlay.show .options-sheet { transform: translateX(-50%) translateY(0); }
         .opt-handle { display: block; width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 14px auto 16px; }
-        .opt-title { font-size: 10px; font-weight: 700; color: #bbb; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.6px; padding: 0 2px; }
+        .opt-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin: 16px 0 10px; }
         .opt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
         .opt-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; padding: 8px 2px; border-radius: 12px; transition: background 0.15s; }
         .opt-item:active { background: #f0f8ff; }
         .opt-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; }
-        .opt-item span { font-size: 10px; color: #444; font-weight: 500; text-align: center; line-height: 1.3; }
+        .opt-item span { font-size: 11px; color: var(--text2); font-weight: 500; text-align: center; margin-top: 4px; line-height: 1.3; }
         .opt-divider { height: 1px; background: #f0f0f0; margin: 10px 0; }
 
         /* ===== BOOKING FLOW ===== */
@@ -315,7 +448,7 @@
         .bk-s-btn.primary { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; }
 
         /* ===== AI CHAT PAGE ===== */
-        .ai-chat-modal { position: fixed; inset: 0; background: #eef2f7; z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
+        .ai-chat-modal { position: fixed; inset: 0; background: var(--bg); z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), background 0.3s; display: flex; flex-direction: column; }
         .ai-chat-modal.active { transform: translateX(0) !important; }
         .ai-chat-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
         .ai-chat-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
@@ -328,27 +461,27 @@
         .ai-msg-row.user { flex-direction: row-reverse; }
         .ai-msg-bot-icon { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#1ba0e2,#007bff); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; flex-shrink: 0; margin-bottom: 2px; }
         .ai-bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 13px; line-height: 1.5; color: #222; }
-        .ai-msg-row:not(.user) .ai-bubble { background: white; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .ai-msg-row:not(.user) .ai-bubble { background: var(--surface); color: var(--text); border-bottom-left-radius: 4px; box-shadow: 0 1px 4px var(--shadow); }
         .ai-msg-row.user .ai-bubble { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; border-bottom-right-radius: 4px; }
         .ai-msg-time { font-size: 10px; color: #bbb; margin-top: 2px; text-align: right; }
         .ai-msg-row:not(.user) .ai-msg-time { text-align: left; padding-left: 38px; }
-        .ai-typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; background: white; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .ai-typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; background: var(--surface); border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; box-shadow: 0 1px 4px var(--shadow); }
         .ai-typing span { width: 7px; height: 7px; border-radius: 50%; background: #bbb; animation: typing-bounce 1.2s infinite; }
         .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
         .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes typing-bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
         .ai-quick-replies { display: flex; gap: 8px; padding: 0 14px 10px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
         .ai-quick-replies::-webkit-scrollbar { display: none; }
-        .ai-qr-btn { white-space: nowrap; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--primary); color: var(--primary); background: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.15s; flex-shrink: 0; }
+        .ai-qr-btn { white-space: nowrap; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--primary); color: var(--primary); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.15s; flex-shrink: 0; }
         .ai-qr-btn:active { background: var(--primary); color: white; }
-        .ai-input-bar { background: white; border-top: 1px solid #eee; padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-bottom: 56px; }
-        .ai-input { flex: 1; border: 1.5px solid #e0e6ee; border-radius: 22px; padding: 10px 16px; font-size: 13px; outline: none; font-family: 'Inter', sans-serif; background: #f8fafc; resize: none; max-height: 80px; overflow-y: auto; }
-        .ai-input:focus { border-color: var(--primary); background: white; }
+        .ai-input-bar { background: var(--surface); border-top: 1px solid var(--border); padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-bottom: 56px; transition: background 0.3s; }
+        .ai-input { flex: 1; border: 1.5px solid var(--border); border-radius: 22px; padding: 10px 16px; font-size: 13px; outline: none; font-family: 'Inter', sans-serif; background: var(--surface2); color: var(--text); resize: none; max-height: 80px; overflow-y: auto; }
+        .ai-input:focus { border-color: var(--primary); background: var(--surface); }
         .ai-send-btn { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#1ba0e2,#007bff); border: none; color: white; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.15s; }
         .ai-send-btn:active { transform: scale(0.92); }
 
         /* ===== AI PLANNER PAGE ===== */
-        .ai-planner-modal { position: fixed; inset: 0; background: #f8f9fa; z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
+        .ai-planner-modal { position: fixed; inset: 0; background: var(--bg); z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), background 0.3s; display: flex; flex-direction: column; }
         .ai-planner-modal.active { transform: translateX(0) !important; }
         .ai-plan-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
         .ai-plan-title { flex: 1; font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; }
@@ -363,7 +496,7 @@
         .btn-generate:active { transform: scale(0.98); }
 
         /* ===== NOTIFICATIONS PAGE ===== */
-        .notif-modal { position: fixed; inset: 0; background: #f8f9fa; z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
+        .notif-modal { position: fixed; inset: 0; background: var(--bg); z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), background 0.3s; display: flex; flex-direction: column; }
         .notif-modal.active { transform: translateX(0) !important; }
         .notif-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
         .notif-list { flex: 1; overflow-y: auto; padding: 12px 16px 72px; display: flex; flex-direction: column; gap: 10px; }
@@ -379,7 +512,7 @@
         .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 4px; }
 
         /* ===== HISTORY PAGE ===== */
-        .history-modal { position: fixed; inset: 0; background: #f8f9fa; z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); display: flex; flex-direction: column; }
+        .history-modal { position: fixed; inset: 0; background: var(--bg); z-index: 2800; max-width: 414px; margin: 0 auto; height: 100dvh; overflow: hidden; transform: translateX(100vw); transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), background 0.3s; display: flex; flex-direction: column; }
         .history-modal.active { transform: translateX(0) !important; }
         .hist-header { background: linear-gradient(135deg,#1ba0e2,#007bff); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
         .hist-title { flex: 1; font-weight: 800; font-size: 16px; }
@@ -387,7 +520,7 @@
         .hist-tab { flex: 1; padding: 13px 6px; text-align: center; font-size: 12px; font-weight: 600; color: #aaa; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
         .hist-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
         .hist-list { flex: 1; overflow-y: auto; padding: 16px 16px 72px; display: flex; flex-direction: column; gap: 14px; }
-        .hist-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.07); cursor: pointer; transition: transform 0.15s; }
+        .hist-card { background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px var(--shadow); cursor: pointer; transition: transform 0.15s, background 0.3s; }
         .hist-card:active { transform: scale(0.98); }
         .hist-card-img { width: 100%; height: 110px; object-fit: cover; position: relative; }
         .hist-card-img-wrap { position: relative; }
@@ -427,6 +560,82 @@
         .itin-btn { flex: 1; padding: 13px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; }
         .itin-btn.cancel { background: #fde; color: #e74c3c; }
         .itin-btn.contact { background: #f0f8ff; color: var(--primary); }
+
+        /* ONBOARDING */
+        .onboarding-modal { position:fixed;inset:0;z-index:9999;background:var(--surface);display:none;flex-direction:column;overflow:hidden;max-width:414px;left:50%;transform:translateX(-50%); }
+        .onboarding-modal.active { display:flex; }
+        .ob-header { padding:20px 20px 0;display:flex;justify-content:flex-end; }
+        .ob-skip { font-size:13px;color:var(--text3);cursor:pointer;padding:4px 8px; }
+        .ob-steps-bar { display:flex;gap:6px;padding:12px 20px 0; }
+        .ob-step-dot { height:4px;border-radius:2px;background:var(--border);flex:1;transition:background 0.3s; }
+        .ob-step-dot.active { background:var(--primary); }
+        .ob-body { flex:1;overflow-y:auto;padding:24px 20px 0; }
+        .ob-emoji { font-size:52px;margin-bottom:12px;text-align:center; }
+        .ob-title { font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px;text-align:center; }
+        .ob-sub { font-size:14px;color:var(--text3);text-align:center;line-height:1.5;margin-bottom:24px; }
+        .ob-input { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;font-size:15px;font-weight:600;background:var(--surface2);color:var(--text);outline:none;box-sizing:border-box;font-family:inherit; }
+        .ob-input:focus { border-color:var(--primary); }
+        .ob-chip-grid { display:flex;flex-wrap:wrap;gap:10px;margin-top:8px; }
+        .ob-chip { padding:10px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);background:var(--surface);transition:0.15s;display:flex;align-items:center;gap:6px; }
+        .ob-chip.sel { background:var(--primary);border-color:var(--primary);color:white; }
+        .ob-budget-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px; }
+        .ob-budget-card { border:2px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;transition:0.15s;text-align:center; }
+        .ob-budget-card.sel { border-color:var(--primary);background:rgba(27,160,226,0.07); }
+        .ob-budget-card .ob-bc-amount { font-size:15px;font-weight:800;color:var(--text); }
+        .ob-budget-card .ob-bc-label { font-size:11px;color:var(--text3);margin-top:3px; }
+        .ob-gps-box { background:var(--surface2);border-radius:16px;padding:20px;text-align:center;margin-top:8px; }
+        .ob-gps-box .ob-gps-icon { font-size:40px;margin-bottom:12px; }
+        .ob-gps-box p { font-size:13px;color:var(--text2);line-height:1.5; }
+        .ob-gps-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:14px;background:var(--primary);color:white;border:none;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit; }
+        .ob-footer { padding:20px;display:flex;align-items:center;gap:12px; }
+        .ob-next-btn { flex:1;padding:16px;background:var(--primary);color:white;border:none;border-radius:16px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+        .ob-next-btn:active { opacity:0.85; }
+        .ob-back-btn { width:48px;height:52px;background:var(--surface2);border:none;border-radius:14px;cursor:pointer;font-size:18px;color:var(--text2);display:flex;align-items:center;justify-content:center; }
+
+        /* WALLET TOP-UP SHEET */
+        .topup-sheet { position:fixed;inset:0;z-index:9200;display:none;align-items:flex-end; }
+        .topup-sheet.active { display:flex; }
+        .topup-sheet-overlay { position:absolute;inset:0;background:rgba(0,0,0,0.5); }
+        .topup-panel { position:relative;background:var(--surface);border-radius:24px 24px 0 0;padding:0 0 32px;z-index:1;width:100%;max-width:414px;margin:0 auto; }
+        .topup-drag { width:40px;height:4px;background:var(--border);border-radius:2px;margin:14px auto 0; }
+        .topup-head { display:flex;justify-content:space-between;align-items:center;padding:16px 20px; }
+        .topup-head h3 { font-size:16px;font-weight:800;color:var(--text); }
+        .topup-head button { background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer; }
+        .topup-amount-row { padding:0 20px 16px; }
+        .topup-amount-label { font-size:12px;color:var(--text3);margin-bottom:8px;font-weight:500; }
+        .topup-amount-chips { display:flex;gap:8px;flex-wrap:wrap; }
+        .topup-chip { padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:700;cursor:pointer;color:var(--text2);transition:0.15s; }
+        .topup-chip.sel { background:var(--primary);border-color:var(--primary);color:white; }
+        .topup-method-label { font-size:12px;color:var(--text3);margin:0 20px 10px;font-weight:500; }
+        .topup-methods { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 20px 16px; }
+        .topup-method { background:var(--surface2);border-radius:14px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:2px solid transparent;transition:0.15s; }
+        .topup-method:active,.topup-method.sel { border-color:var(--primary);background:rgba(27,160,226,0.08); }
+        .topup-method .tm-icon { font-size:22px; }
+        .topup-method span { font-size:10px;font-weight:600;color:var(--text2);text-align:center;line-height:1.2; }
+        .topup-confirm-btn { margin:4px 20px 0;width:calc(100% - 40px);padding:16px;background:linear-gradient(135deg,#1ba0e2,#0468d7);color:white;border:none;border-radius:16px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit; }
+        .topup-confirm-btn:active { opacity:0.85; }
+        .topup-intl-note { font-size:11px;color:var(--text3);text-align:center;margin-top:10px;padding:0 20px; }
+
+        /* VOUCHER USE SHEET */
+        .voucher-use-sheet { position:fixed;inset:0;z-index:9300;display:none;align-items:flex-end; }
+        .voucher-use-sheet.active { display:flex; }
+        .vus-overlay { position:absolute;inset:0;background:rgba(0,0,0,0.55); }
+        .vus-panel { position:relative;background:var(--surface);border-radius:24px 24px 0 0;padding:0 0 40px;z-index:1;width:100%;max-width:414px;margin:0 auto; }
+        .vus-drag { width:40px;height:4px;background:var(--border);border-radius:2px;margin:14px auto; }
+        .vus-head { display:flex;justify-content:space-between;align-items:center;padding:0 20px 16px; }
+        .vus-head h3 { font-size:16px;font-weight:800;color:var(--text); }
+        .vus-head button { background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer; }
+        .vus-body { padding:0 20px; }
+        .vus-qr { width:160px;height:160px;background:var(--surface2);border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:60px;border:2px dashed var(--border); }
+        .vus-code-box { background:var(--surface2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
+        .vus-code { font-size:18px;font-weight:900;color:var(--primary);letter-spacing:2px;font-family:monospace; }
+        .vus-copy-btn { background:var(--primary);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit; }
+        .vus-info-row { display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border); }
+        .vus-info-label { color:var(--text3); }
+        .vus-info-val { font-weight:700;color:var(--text); }
+        .vus-steps { margin-top:16px;background:var(--surface2);border-radius:14px;padding:14px 16px; }
+        .vus-steps-title { font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px; }
+        .vus-step-item { font-size:12px;color:var(--text3);padding:3px 0;display:flex;gap:8px;align-items:flex-start; }
     </style>
 </head>
 <body>
@@ -436,7 +645,7 @@
     <div class="main-header">
         <div class="util-search-bar" onclick="showToast('Tìm kiếm — Đang phát triển 🔍')">
             <i class="fas fa-search"></i>
-            <span>Bạn muốn đi đâu?</span>
+            <span id="searchBarPlaceholder">Khám phá Đà Nẵng...</span>
         </div>
         <div class="h-mid">LOCAL AI</div>
         <div class="h-right" id="aiHeaderBtn" onclick="openAIChat()">
@@ -446,169 +655,94 @@
 
     <!-- HERO BAND -->
     <div class="hero-band">
-        <div class="hero-tagline">Chào mừng đến với</div>
-        <div class="hero-title">LOCAL AI ✈️</div>
-    </div>
-
-    <!-- UTILITY CARD -->
-    <div class="utility-card" id="utilityCard">
-        <div class="utility-pages" id="utilityPages">
-            <!-- Page 1: Dịch vụ chính -->
-            <div class="utility-page active">
-                <div class="utility-row">
-                    <div class="util-item" onclick="utilityClick('bay')">
-                        <div class="util-icon" style="background:#1ba0e2"><i class="fas fa-plane"></i></div>
-                        <span>Tìm chuyến<br>bay</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('khachsan')">
-                        <div class="util-icon" style="background:#1a3a6c"><i class="fas fa-hotel"></i></div>
-                        <span>Tìm khách<br>sạn</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('hoatdong')">
-                        <div class="util-icon" style="background:#e8715a"><i class="fas fa-hiking"></i></div>
-                        <span>Hoạt động<br>du lịch</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('xekhach')">
-                        <div class="util-icon" style="background:#2ecc71"><i class="fas fa-bus"></i></div>
-                        <span>Vé xe<br>khách</span>
-                    </div>
-                </div>
-                <div class="utility-row">
-                    <div class="util-item" onclick="utilityClick('thuyền')">
-                        <div class="util-icon sm" style="background:#e8715a"><i class="fas fa-ship"></i></div>
-                        <span>Du thuyền</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('combo')">
-                        <div class="util-icon sm" style="background:#9b59b6"><i class="fas fa-layer-group"></i></div>
-                        <span>Combo tiết<br>kiệm</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('tour')">
-                        <div class="util-icon sm" style="background:#e74c3c"><i class="fas fa-route"></i></div>
-                        <span>Tour</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('xe')">
-                        <div class="util-icon sm" style="background:#16a085"><i class="fas fa-car-side"></i></div>
-                        <span>Thuê xe</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('airport')">
-                        <div class="util-icon sm" style="background:#00b894"><i class="fas fa-shuttle-van"></i></div>
-                        <span>Đưa đón<br>sân bay</span>
-                    </div>
-                </div>
+        <div class="hero-tagline">Sở Văn Hóa Du Lịch</div>
+        <div class="hero-title">LOCAL AI 🗺️</div>
+        <div class="hero-chips">
+            <div class="hero-chip loc-chip" id="heroLocationChip" onclick="openLocationPicker()">
+                <i class="fas fa-location-dot"></i>
+                <span id="heroLocationText">Đà Nẵng</span>
+                <i class="fas fa-chevron-down" style="font-size:9px;opacity:0.75"></i>
             </div>
-            <!-- Page 2: Trải nghiệm & ẩm thực -->
-            <div class="utility-page">
-                <div class="utility-row">
-                    <div class="util-item" onclick="utilityClick('restaurant')">
-                        <div class="util-icon" style="background:#e67e22"><i class="fas fa-utensils"></i></div>
-                        <span>Nhà hàng<br>đặt bàn</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('spa')">
-                        <div class="util-icon" style="background:#a29bfe"><i class="fas fa-spa"></i></div>
-                        <span>Spa &<br>Wellness</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('show')">
-                        <div class="util-icon" style="background:#fd79a8"><i class="fas fa-music"></i></div>
-                        <span>Show &<br>Sự kiện</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('golf')">
-                        <div class="util-icon" style="background:#00b894"><i class="fas fa-golf-ball"></i></div>
-                        <span>Golf &<br>Thể thao</span>
-                    </div>
-                </div>
-                <div class="utility-row">
-                    <div class="util-item" onclick="utilityClick('visa')">
-                        <div class="util-icon sm" style="background:#0984e3"><i class="fas fa-passport"></i></div>
-                        <span>Dịch vụ<br>Visa</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('baohi')">
-                        <div class="util-icon sm" style="background:#e17055"><i class="fas fa-shield-alt"></i></div>
-                        <span>Bảo hiểm<br>du lịch</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('photo')">
-                        <div class="util-icon sm" style="background:#6c5ce7"><i class="fas fa-camera"></i></div>
-                        <span>Chụp ảnh<br>du lịch</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('simcard')">
-                        <div class="util-icon sm" style="background:#00cec9"><i class="fas fa-sim-card"></i></div>
-                        <span>SIM &<br>WiFi</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('luggage')">
-                        <div class="util-icon sm" style="background:#fdcb6e; filter:brightness(0.85)"><i class="fas fa-suitcase-rolling" style="color:#fff"></i></div>
-                        <span>Gửi hành<br>lý</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Page 3: Deals & Loyalty -->
-            <div class="utility-page">
-                <div class="utility-row">
-                    <div class="util-item" onclick="utilityClick('voucher')">
-                        <div class="util-icon" style="background:#e74c3c"><i class="fas fa-ticket-alt"></i></div>
-                        <span>Voucher<br>Hot</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('loyalty')">
-                        <div class="util-icon" style="background:#f39c12"><i class="fas fa-crown"></i></div>
-                        <span>Hội viên<br>VIP</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('deals')">
-                        <div class="util-icon" style="background:#27ae60"><i class="fas fa-tags"></i></div>
-                        <span>Flash<br>Deals</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('gift')">
-                        <div class="util-icon" style="background:#e91e8c"><i class="fas fa-gift"></i></div>
-                        <span>Quà tặng<br>& Ưu đãi</span>
-                    </div>
-                </div>
-                <div class="utility-row">
-                    <div class="util-item" onclick="utilityClick('topup')">
-                        <div class="util-icon sm" style="background:#1ba0e2"><i class="fas fa-wallet"></i></div>
-                        <span>Nạp<br>ví</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('referral')">
-                        <div class="util-icon sm" style="background:#9b59b6"><i class="fas fa-user-plus"></i></div>
-                        <span>Giới thiệu<br>bạn bè</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('cashback')">
-                        <div class="util-icon sm" style="background:#e67e22"><i class="fas fa-undo-alt"></i></div>
-                        <span>Hoàn tiền</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('partner')">
-                        <div class="util-icon sm" style="background:#2c3e50"><i class="fas fa-handshake"></i></div>
-                        <span>Đối tác<br>liên kết</span>
-                    </div>
-                    <div class="util-item" onclick="utilityClick('support')">
-                        <div class="util-icon sm" style="background:#00b894"><i class="fas fa-headset"></i></div>
-                        <span>Hỗ trợ<br>24/7</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="util-dots" id="utilDots">
-            <span class="util-dot active" onclick="goUtilPage(0)"></span>
-            <span class="util-dot" onclick="goUtilPage(1)"></span>
-            <span class="util-dot" onclick="goUtilPage(2)"></span>
+            <div class="hero-chip"><i class="fas fa-sun"></i> 32°C · Nắng đẹp</div>
         </div>
     </div>
 
-<!-- planner-box removed — moved to AI Planner modal -->
+    <!-- WALLET CARD -->
+    <div class="wallet-card">
+        <div class="wallet-icon"><i class="fas fa-wallet"></i></div>
+        <div class="wallet-info">
+            <div class="wallet-label">Số dư ví</div>
+            <div class="wallet-balance">2.500.000<span class="currency">đ</span></div>
+        </div>
+        <div class="wallet-btns">
+            <button class="wallet-btn topup" onclick="openTopup()">
+                <i class="fas fa-plus"></i> Nạp tiền
+            </button>
+            <button class="wallet-btn voucher-btn" onclick="navigateTo('voucher')">
+                <i class="fas fa-ticket-alt"></i> Voucher của bạn
+            </button>
+        </div>
+    </div>
+
+    <!-- VIDEO FEED -->
+    <div class="video-feed">
+        <div class="section-title" style="padding:12px 0 8px;">Dành cho bạn 🎬 <span class="section-title-link" onclick="showToast('Xem thêm — Đang phát triển')">Xem thêm ›</span></div>
+        <div class="video-scroll">
+            <div class="video-card" onclick="showToast('Phát video — Đang phát triển 🎬')">
+                <img src="https://picsum.photos/id/15/300/420" alt="">
+                <div class="video-overlay"></div>
+                <div class="video-play"><i class="fas fa-play" style="margin-left:2px"></i></div>
+                <div class="video-info">
+                    <div class="video-tag">Ẩm thực</div>
+                    <div class="video-title">Bánh mì Phượng - Hội An nổi tiếng thế giới</div>
+                    <div class="video-views"><i class="fas fa-eye"></i> 12.4K lượt xem</div>
+                </div>
+            </div>
+            <div class="video-card" onclick="showToast('Phát video — Đang phát triển 🎬')">
+                <img src="https://picsum.photos/id/29/300/420" alt="">
+                <div class="video-overlay"></div>
+                <div class="video-play"><i class="fas fa-play" style="margin-left:2px"></i></div>
+                <div class="video-info">
+                    <div class="video-tag">Thắng cảnh</div>
+                    <div class="video-title">Cầu Vàng Bà Nà Hills - Kỳ quan nhân tạo</div>
+                    <div class="video-views"><i class="fas fa-eye"></i> 38.7K lượt xem</div>
+                </div>
+            </div>
+            <div class="video-card" onclick="showToast('Phát video — Đang phát triển 🎬')">
+                <img src="https://picsum.photos/id/43/300/420" alt="">
+                <div class="video-overlay"></div>
+                <div class="video-play"><i class="fas fa-play" style="margin-left:2px"></i></div>
+                <div class="video-info">
+                    <div class="video-tag">Lưu trú</div>
+                    <div class="video-title">Resort 4 sao view biển chỉ 800K/đêm</div>
+                    <div class="video-views"><i class="fas fa-eye"></i> 9.1K lượt xem</div>
+                </div>
+            </div>
+            <div class="video-card" onclick="showToast('Phát video — Đang phát triển 🎬')">
+                <img src="https://picsum.photos/id/65/300/420" alt="">
+                <div class="video-overlay"></div>
+                <div class="video-play"><i class="fas fa-play" style="margin-left:2px"></i></div>
+                <div class="video-info">
+                    <div class="video-tag">Trải nghiệm</div>
+                    <div class="video-title">Chèo kayak ngắm hoàng hôn Hạ Long</div>
+                    <div class="video-views"><i class="fas fa-eye"></i> 21.3K lượt xem</div>
+                </div>
+            </div>
+            <div class="video-card" onclick="showToast('Phát video — Đang phát triển 🎬')">
+                <img src="https://picsum.photos/id/82/300/420" alt="">
+                <div class="video-overlay"></div>
+                <div class="video-play"><i class="fas fa-play" style="margin-left:2px"></i></div>
+                <div class="video-info">
+                    <div class="video-tag">Ẩm thực</div>
+                    <div class="video-title">Bún bò Huế - Tô 30K ngon hơn nhà hàng</div>
+                    <div class="video-views"><i class="fas fa-eye"></i> 15.2K lượt xem</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="ai-wrapper">
-        <div class="section-title">LOCAL AI PICK FOR YOU ✨ <span class="section-title-link" onclick="showToast('Xem thêm — Đang phát triển')">Xem thêm ›</span></div>
-        
-        <div class="city-search-box">
-            <i class="fas fa-map-marker-alt"></i>
-            <input type="text" id="aiCitySearch" placeholder="Tìm thành phố (VD: Sài Gòn, Hà Nội...)" autocomplete="off">
-            <div id="citySuggestions" class="city-sugg-box"></div>
-        </div>
-
-        <div class="filter-category-bar">
-            <div class="cat-pill active" onclick="filterByCat('all', this)"><i class="fas fa-th-large"></i> <span>Tất cả</span></div>
-            <div class="cat-pill" onclick="filterByCat('Ẩm thực', this)"><i class="fas fa-utensils"></i> <span>Ẩm thực</span></div>
-            <div class="cat-pill" onclick="filterByCat('Lưu trú', this)"><i class="fas fa-bed"></i> <span>Lưu trú</span></div>
-            <div class="cat-pill" onclick="filterByCat('Trải nghiệm', this)"><i class="fas fa-star"></i> <span>Trải nghiệm</span></div>
-        </div>
-        <div class="nav-btn prev" onclick="scrollAi(-1)"><i class="fas fa-chevron-left"></i></div>
-        <div class="nav-btn next" onclick="scrollAi(1)"><i class="fas fa-chevron-right"></i></div>
+        <div class="section-title" id="aiPickTitle">AI gợi ý tại Đà Nẵng 📍 <span class="section-title-link" onclick="showToast('Xem thêm — Đang phát triển')">Xem thêm ›</span></div>
         <div class="scroll-container" id="aiList"></div>
     </div>
 
@@ -618,6 +752,130 @@
     <div class="spotlight">
         <h4 style="color:#f39c12">Cultural Spotlight</h4>
         <p style="font-size: 12px; color: #666; margin-top: 5px;">Hôm nay có lễ hội tại trung tâm đó bé ơi! 🥰</p>
+    </div>
+</div>
+
+<!-- ===== ONBOARDING ===== -->
+<div class="onboarding-modal" id="onboardingModal">
+    <div class="ob-header">
+        <span class="ob-skip" onclick="finishOnboarding()">Bỏ qua</span>
+    </div>
+    <div class="ob-steps-bar">
+        <div class="ob-step-dot active" id="obDot0"></div>
+        <div class="ob-step-dot" id="obDot1"></div>
+        <div class="ob-step-dot" id="obDot2"></div>
+        <div class="ob-step-dot" id="obDot3"></div>
+    </div>
+    <div class="ob-body" id="obBody">
+        <!-- filled by JS -->
+    </div>
+    <div class="ob-footer" id="obFooter">
+        <button class="ob-back-btn" id="obBackBtn" onclick="obBack()" style="display:none"><i class="fas fa-arrow-left"></i></button>
+        <button class="ob-next-btn" id="obNextBtn" onclick="obNext()">Tiếp tục</button>
+    </div>
+</div>
+
+<!-- LOCATION PICKER SHEET -->
+<div class="location-sheet" id="locationSheet">
+    <div class="location-sheet-overlay" onclick="closeLocationPicker()"></div>
+    <div class="location-sheet-panel">
+        <div class="ls-handle"></div>
+        <div class="ls-header">
+            <span>📍 Bạn đang ở đâu?</span>
+            <button onclick="closeLocationPicker()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ls-subtitle">AI sẽ tự động gợi ý địa điểm phù hợp tại khu vực của bạn</div>
+        <div class="ls-grid">
+            <div class="ls-city" data-city="Hà Nội" onclick="changeLocation('Hà Nội')">🏛️<span>Hà Nội</span></div>
+            <div class="ls-city" data-city="Đà Nẵng" onclick="changeLocation('Đà Nẵng')">🏖️<span>Đà Nẵng</span></div>
+            <div class="ls-city" data-city="Hội An" onclick="changeLocation('Hội An')">🏮<span>Hội An</span></div>
+            <div class="ls-city" data-city="Sài Gòn" onclick="changeLocation('Sài Gòn')">🌆<span>Sài Gòn</span></div>
+            <div class="ls-city" data-city="Đà Lạt" onclick="changeLocation('Đà Lạt')">🌸<span>Đà Lạt</span></div>
+            <div class="ls-city" data-city="Phú Quốc" onclick="changeLocation('Phú Quốc')">🏝️<span>Phú Quốc</span></div>
+        </div>
+        <div class="ls-gps-btn" onclick="useCurrentGPS()">
+            <i class="fas fa-crosshairs"></i> Dùng vị trí hiện tại (GPS)
+        </div>
+    </div>
+</div>
+
+<!-- ===== WALLET TOP-UP SHEET ===== -->
+<div class="topup-sheet" id="topupSheet">
+    <div class="topup-sheet-overlay" onclick="closeTopup()"></div>
+    <div class="topup-panel">
+        <div class="topup-drag"></div>
+        <div class="topup-head">
+            <h3>💳 Nạp tiền vào ví</h3>
+            <button onclick="closeTopup()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="topup-amount-row">
+            <div class="topup-amount-label">Chọn số tiền</div>
+            <div class="topup-amount-chips">
+                <div class="topup-chip" onclick="selectTopupAmount(this,'50.000đ')">50K</div>
+                <div class="topup-chip sel" onclick="selectTopupAmount(this,'100.000đ')">100K</div>
+                <div class="topup-chip" onclick="selectTopupAmount(this,'200.000đ')">200K</div>
+                <div class="topup-chip" onclick="selectTopupAmount(this,'500.000đ')">500K</div>
+                <div class="topup-chip" onclick="selectTopupAmount(this,'1.000.000đ')">1M</div>
+                <div class="topup-chip" onclick="selectTopupAmount(this,'2.000.000đ')">2M</div>
+            </div>
+        </div>
+        <div class="topup-method-label">Phương thức thanh toán</div>
+        <div class="topup-methods">
+            <div class="topup-method sel" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">📱</div><span>MoMo</span>
+            </div>
+            <div class="topup-method" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">💙</div><span>ZaloPay</span>
+            </div>
+            <div class="topup-method" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">🏦</div><span>VNPay</span>
+            </div>
+            <div class="topup-method" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">🔵</div><span>Chuyển khoản</span>
+            </div>
+            <div class="topup-method" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">💳</div><span>Visa / MC</span>
+            </div>
+            <div class="topup-method" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">🅿️</div><span>PayPal</span>
+            </div>
+            <div class="topup-method" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">🍎</div><span>Apple Pay</span>
+            </div>
+            <div class="topup-method" onclick="selectTopupMethod(this)">
+                <div class="tm-icon">🤖</div><span>Google Pay</span>
+            </div>
+        </div>
+        <button class="topup-confirm-btn" id="topupConfirmBtn" onclick="confirmTopup()">Nạp 100.000đ ngay</button>
+        <div class="topup-intl-note">🌏 Hỗ trợ thanh toán quốc tế · Bảo mật SSL 256-bit</div>
+    </div>
+</div>
+
+<!-- ===== VOUCHER USE SHEET ===== -->
+<div class="voucher-use-sheet" id="voucherUseSheet">
+    <div class="vus-overlay" onclick="closeVoucherUse()"></div>
+    <div class="vus-panel">
+        <div class="vus-drag"></div>
+        <div class="vus-head">
+            <h3 id="vusTitle">Sử dụng Voucher</h3>
+            <button onclick="closeVoucherUse()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="vus-body">
+            <div class="vus-qr">📱</div>
+            <div class="vus-code-box">
+                <div class="vus-code" id="vusCode">LOCAL-2026</div>
+                <button class="vus-copy-btn" onclick="copyVoucherCode()"><i class="fas fa-copy"></i> Sao chép</button>
+            </div>
+            <div class="vus-info-row"><span class="vus-info-label">Giảm</span><span class="vus-info-val" id="vusDiscount">—</span></div>
+            <div class="vus-info-row"><span class="vus-info-label">Áp dụng cho</span><span class="vus-info-val" id="vusApply">—</span></div>
+            <div class="vus-info-row"><span class="vus-info-label">Hạn sử dụng</span><span class="vus-info-val" id="vusExp">—</span></div>
+            <div class="vus-steps">
+                <div class="vus-steps-title">Cách sử dụng</div>
+                <div class="vus-step-item"><span>1.</span><span>Cho nhân viên quét mã QR hoặc nhập mã voucher</span></div>
+                <div class="vus-step-item"><span>2.</span><span>Giảm giá sẽ được áp dụng tự động vào hóa đơn</span></div>
+                <div class="vus-step-item"><span>3.</span><span>Mỗi voucher chỉ dùng được 1 lần</span></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -660,7 +918,7 @@
         </div>
         <div class="dm-action-btns">
             <button class="dm-btn-dir" onclick="showToast('Chỉ đường — Đang phát triển 🗺️')"><i class="fas fa-directions"></i> Chỉ đường</button>
-            <button class="dm-btn-book" id="dmBookBtn" onclick="openBooking(currentDetailId)"><i class="fas fa-calendar-check"></i> Đặt Ngay</button>
+            <button class="dm-btn-book" id="dmBookBtn" onclick="openBooking(currentDetailId)"><i class="fas fa-compass"></i> Khám phá</button>
         </div>
         <div class="dm-section">
             <div class="dm-sec-title">Gợi ý tương tự 🎯</div>
@@ -678,11 +936,23 @@
         <div style="display:flex;align-items:center;gap:12px;padding:10px 4px 14px;border-bottom:1px solid #f0f0f0;margin-bottom:14px;">
             <img src="https://picsum.photos/id/64/100/100" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);" alt="avt">
             <div>
-                <div style="font-weight:700;font-size:14px;color:#333;">User Đáng Iu</div>
+                <div style="font-weight:700;font-size:14px;color:var(--text);" id="profileName">User Đáng Iu</div>
                 <div style="font-size:11px;color:#f39c12;font-weight:600;">Hội Viên: Khách VIP 👑</div>
             </div>
             <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;">
                 <div class="opt-item" style="padding:6px 10px;background:#f0f8ff;border-radius:10px;" onclick="toggleOptions();showToast('Cài đặt — Đang phát triển ⚙️')"><i class="fas fa-cog" style="color:var(--primary);font-size:16px;"></i></div>
+            </div>
+        </div>
+        <div class="theme-toggle-row" onclick="toggleTheme()">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="theme-row-icon"><i id="themeIcon" class="fas fa-moon"></i></div>
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:var(--text)">Giao diện</div>
+                    <div style="font-size:11px;color:var(--text3)" id="themeLabel">Sáng</div>
+                </div>
+            </div>
+            <div class="theme-switch-track" id="themeSwitchTrack">
+                <div class="theme-switch-knob" id="themeSwitchKnob"></div>
             </div>
         </div>
         <div class="opt-title">Khám phá</div>
@@ -691,33 +961,33 @@
                 <div class="opt-icon" style="background:#1ba0e2"><i class="fas fa-home"></i></div>
                 <span>Trang chủ</span>
             </div>
-            <div class="opt-item" onclick="optionNav('search')">
-                <div class="opt-icon" style="background:#9b59b6"><i class="fas fa-search"></i></div>
-                <span>Tìm kiếm</span>
+            <div class="opt-item" onclick="toggleOptions(); openAIChat()">
+                <div class="opt-icon" style="background:#9b59b6"><i class="fas fa-robot"></i></div>
+                <span>AI Chat</span>
             </div>
-            <div class="opt-item" onclick="optionNav('booking')">
-                <div class="opt-icon" style="background:#e67e22"><i class="fas fa-calendar-check"></i></div>
-                <span>Đặt chỗ</span>
-            </div>
-            <div class="opt-item" onclick="optionNav('voucher')">
-                <div class="opt-icon" style="background:#e74c3c"><i class="fas fa-ticket-alt"></i></div>
-                <span>Voucher</span>
+            <div class="opt-item" onclick="toggleOptions(); openAIPlanner()">
+                <div class="opt-icon" style="background:#e67e22"><i class="fas fa-route"></i></div>
+                <span>AI Gợi ý</span>
             </div>
             <div class="opt-item" onclick="optionNav('map')">
                 <div class="opt-icon" style="background:#27ae60"><i class="fas fa-map-marked-alt"></i></div>
                 <span>Bản đồ</span>
             </div>
-            <div class="opt-item" onclick="toggleOptions(); openHistory()">
-                <div class="opt-icon" style="background:#3498db"><i class="fas fa-route"></i></div>
-                <span>Chuyến đi</span>
-            </div>
-            <div class="opt-item" onclick="optionNav('loyalty')">
-                <div class="opt-icon" style="background:#f39c12"><i class="fas fa-crown"></i></div>
-                <span>Hội viên</span>
-            </div>
             <div class="opt-item" onclick="toggleOptions(); openNotifications()">
-                <div class="opt-icon" style="background:#e91e8c"><i class="fas fa-bell"></i></div>
-                <span>Thông báo</span>
+                <div class="opt-icon" style="background:#3498db"><i class="fas fa-calendar-alt"></i></div>
+                <span>Lịch trình</span>
+            </div>
+            <div class="opt-item" onclick="toggleOptions(); openHistory()">
+                <div class="opt-icon" style="background:#00b894"><i class="fas fa-clock-rotate-left"></i></div>
+                <span>Lịch sử</span>
+            </div>
+            <div class="opt-item" onclick="toggleOptions(); openVoucher()">
+                <div class="opt-icon" style="background:#f39c12"><i class="fas fa-ticket-alt"></i></div>
+                <span>Voucher</span>
+            </div>
+            <div class="opt-item" onclick="toggleOptions(); openPref()">
+                <div class="opt-icon" style="background:#e91e8c"><i class="fas fa-heart"></i></div>
+                <span>Sở thích</span>
             </div>
         </div>
         <div class="opt-divider"></div>
@@ -996,6 +1266,166 @@
     </div>
 </div>
 
+<!-- ===== VOUCHER PAGE ===== -->
+<div class="voucher-modal" id="voucherModal">
+    <div class="notif-header">
+        <button class="bk-back" onclick="closeVoucher()"><i class="fas fa-arrow-left"></i></button>
+        <div class="hist-title">Coupon & Voucher</div>
+    </div>
+    <div class="voucher-tabs">
+        <div class="voucher-tab active" onclick="switchVoucherTab(0,this)">Của tôi</div>
+        <div class="voucher-tab" onclick="switchVoucherTab(1,this)">Từ đối tác</div>
+        <div class="voucher-tab" onclick="switchVoucherTab(2,this)">Flash deals</div>
+    </div>
+    <div class="voucher-list" id="voucherList"></div>
+</div>
+
+<!-- ===== EVENTS PAGE ===== -->
+<div class="events-modal" id="eventsModal">
+    <div class="notif-header">
+        <button class="bk-back" onclick="closeEvents()"><i class="fas fa-arrow-left"></i></button>
+        <div class="hist-title">Sự kiện & Show diễn 🎪</div>
+    </div>
+    <div class="events-list">
+        <div class="event-card" onclick="showToast('Chi tiết sự kiện — Đang phát triển')">
+            <img src="https://picsum.photos/id/21/400/200" class="event-img" alt="">
+            <div class="event-body">
+                <div class="event-name">🎵 Đêm nhạc Trịnh Công Sơn — Hội An</div>
+                <div class="event-row"><i class="fas fa-calendar"></i> Thứ Bảy, 19/4/2026 · 20:00</div>
+                <div class="event-row"><i class="fas fa-map-marker-alt"></i> Công viên An Hội, Hội An</div>
+                <div class="event-row"><i class="fas fa-ticket-alt"></i> Miễn phí vào cổng</div>
+                <div class="event-tag-row"><span class="event-tag hot">🔥 Hot</span><span class="event-tag free">Miễn phí</span><span class="event-tag">Âm nhạc</span></div>
+                <div class="event-sold-bar"><div class="event-sold-fill" style="width:78%"></div></div>
+                <div style="font-size:10px;color:#888;margin-top:4px">78% quan tâm · Còn 2 ngày</div>
+            </div>
+        </div>
+        <div class="event-card" onclick="showToast('Chi tiết sự kiện — Đang phát triển')">
+            <img src="https://picsum.photos/id/49/400/200" class="event-img" alt="">
+            <div class="event-body">
+                <div class="event-name">🏮 Lễ hội Đèn lồng tháng 4</div>
+                <div class="event-row"><i class="fas fa-calendar"></i> Rằm tháng 3 · 25/4/2026</div>
+                <div class="event-row"><i class="fas fa-map-marker-alt"></i> Phố cổ Hội An</div>
+                <div class="event-row"><i class="fas fa-ticket-alt"></i> 80.000đ / người</div>
+                <div class="event-tag-row"><span class="event-tag hot">🔥 Nổi bật</span><span class="event-tag">Văn hóa</span><span class="event-tag">Truyền thống</span></div>
+                <div class="event-sold-bar"><div class="event-sold-fill" style="width:92%"></div></div>
+                <div style="font-size:10px;color:#888;margin-top:4px">92% đã đặt · Sắp hết vé</div>
+            </div>
+        </div>
+        <div class="event-card" onclick="showToast('Chi tiết sự kiện — Đang phát triển')">
+            <img src="https://picsum.photos/id/58/400/200" class="event-img" alt="">
+            <div class="event-body">
+                <div class="event-name">🏄 Giải Lướt sóng Quốc tế Đà Nẵng</div>
+                <div class="event-row"><i class="fas fa-calendar"></i> 26–28/4/2026</div>
+                <div class="event-row"><i class="fas fa-map-marker-alt"></i> Bãi biển Mỹ Khê, Đà Nẵng</div>
+                <div class="event-row"><i class="fas fa-ticket-alt"></i> Miễn phí xem · 500k thi đấu</div>
+                <div class="event-tag-row"><span class="event-tag free">Miễn phí</span><span class="event-tag">Thể thao</span></div>
+                <div class="event-sold-bar"><div class="event-sold-fill" style="width:45%"></div></div>
+                <div style="font-size:10px;color:#888;margin-top:4px">45% quan tâm · Còn 15 ngày</div>
+            </div>
+        </div>
+        <div class="event-card" onclick="showToast('Chi tiết sự kiện — Đang phát triển')">
+            <img src="https://picsum.photos/id/76/400/200" class="event-img" alt="">
+            <div class="event-body">
+                <div class="event-name">🍜 Lễ hội Ẩm thực Miền Trung</div>
+                <div class="event-row"><i class="fas fa-calendar"></i> 1–3/5/2026</div>
+                <div class="event-row"><i class="fas fa-map-marker-alt"></i> Quảng trường 29/3, Đà Nẵng</div>
+                <div class="event-row"><i class="fas fa-ticket-alt"></i> Miễn phí vào cổng</div>
+                <div class="event-tag-row"><span class="event-tag free">Miễn phí</span><span class="event-tag">Ẩm thực</span><span class="event-tag">Gia đình</span></div>
+                <div class="event-sold-bar"><div class="event-sold-fill" style="width:30%"></div></div>
+                <div style="font-size:10px;color:#888;margin-top:4px">30% quan tâm · Còn 20 ngày</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CHECK-IN MODAL ===== -->
+<div class="checkin-overlay" id="checkinOverlay">
+    <div class="checkin-sheet">
+        <div class="checkin-handle"></div>
+        <div id="checkinStep1">
+            <div style="text-align:center;padding:10px 20px 20px;">
+                <div style="font-size:40px;margin-bottom:12px;" id="checkinGpsIcon">📡</div>
+                <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;" id="checkinGpsTitle">Đang xác nhận vị trí...</div>
+                <div style="font-size:13px;color:var(--text3);" id="checkinGpsSub">Local AI đang xác minh bạn có đang ở địa điểm này không</div>
+                <div id="checkinVerifiedBadge" style="display:none;margin-top:16px;background:#eafaf1;border-radius:12px;padding:12px 16px;align-items:center;gap:8px;">
+                    <i class="fas fa-shield-check" style="color:#27ae60;font-size:20px;"></i>
+                    <div style="text-align:left">
+                        <div style="font-size:13px;font-weight:700;color:#27ae60">Địa điểm được Sở VHDL xác nhận ✓</div>
+                        <div style="font-size:11px;color:#888">Địa điểm hợp lệ · Dữ liệu chính xác</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="checkinStep2" style="display:none;padding:0 20px 20px;">
+            <div class="checkin-title" id="checkinPlaceName">Check-in địa điểm</div>
+            <div class="checkin-sub">Chia sẻ trải nghiệm để giúp cộng đồng du lịch</div>
+            <div class="checkin-stars" id="checkinStars">
+                <span class="checkin-star" onclick="setCheckinStar(1)">★</span>
+                <span class="checkin-star" onclick="setCheckinStar(2)">★</span>
+                <span class="checkin-star" onclick="setCheckinStar(3)">★</span>
+                <span class="checkin-star" onclick="setCheckinStar(4)">★</span>
+                <span class="checkin-star" onclick="setCheckinStar(5)">★</span>
+            </div>
+            <textarea class="checkin-textarea" id="checkinTextarea" placeholder="Chia sẻ cảm nhận của bạn..." rows="3"></textarea>
+            <button class="checkin-submit" onclick="submitCheckin()"><i class="fas fa-check-circle"></i> Check-in & Đánh giá</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PREFERENCES PAGE ===== -->
+<div class="pref-modal" id="prefModal">
+    <div class="notif-header">
+        <button class="bk-back" onclick="closePref()"><i class="fas fa-arrow-left"></i></button>
+        <div class="hist-title">Sở thích du lịch 💫</div>
+    </div>
+    <div class="pref-body">
+        <div class="pref-section">
+            <div class="pref-section-title">Trải nghiệm mong muốn</div>
+            <div class="pref-chips">
+                <div class="pref-chip selected" onclick="togglePref(this)"><span>🍜</span> Ẩm thực</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🏞️</span> Thắng cảnh</div>
+                <div class="pref-chip selected" onclick="togglePref(this)"><span>🎵</span> Ca nhạc</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🏄</span> Thể thao</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🏛️</span> Văn hóa</div>
+                <div class="pref-chip selected" onclick="togglePref(this)"><span>🛍️</span> Mua sắm</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🧖</span> Spa & Wellness</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🎭</span> Lễ hội</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🌊</span> Biển & Bơi lội</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>⛰️</span> Trekking</div>
+            </div>
+        </div>
+        <div class="pref-section">
+            <div class="pref-section-title">Phong cách đi chơi</div>
+            <div class="pref-chips">
+                <div class="pref-chip selected" onclick="togglePref(this)"><span>👨‍👩‍👧</span> Gia đình</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>👫</span> Đôi lứa</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🎒</span> Solo</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>👥</span> Nhóm bạn</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>💼</span> Công tác</div>
+            </div>
+        </div>
+        <div class="pref-section">
+            <div class="pref-section-title">Ngân sách mỗi ngày</div>
+            <div class="pref-budget-row">
+                <div class="pref-budget-btn" onclick="selectBudget(this)">Tiết kiệm<br><small>&lt;500K</small></div>
+                <div class="pref-budget-btn selected" onclick="selectBudget(this)">Vừa phải<br><small>500K–1.5M</small></div>
+                <div class="pref-budget-btn" onclick="selectBudget(this)">Thoải mái<br><small>1.5M–3M</small></div>
+                <div class="pref-budget-btn" onclick="selectBudget(this)">Cao cấp<br><small>&gt;3M</small></div>
+            </div>
+        </div>
+        <div class="pref-section">
+            <div class="pref-section-title">Kết nối với</div>
+            <div class="pref-chips">
+                <div class="pref-chip selected" onclick="togglePref(this)"><span>👤</span> Cá nhân</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>👨‍👩‍👧</span> Gia đình</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>👥</span> Bạn bè</div>
+                <div class="pref-chip" onclick="togglePref(this)"><span>🏢</span> Doanh nghiệp</div>
+            </div>
+        </div>
+        <button class="pref-save-btn" onclick="showToast('Đã lưu sở thích ✓ AI sẽ gợi ý phù hợp hơn 🎯'); closePref()">Lưu sở thích</button>
+    </div>
+</div>
+
 <!-- ===== AI CHAT PAGE ===== -->
 <div class="ai-chat-modal" id="aiChatModal">
     <div class="ai-chat-header">
@@ -1012,7 +1442,7 @@
         <div class="ai-msg-row">
             <div class="ai-msg-bot-icon"><i class="fas fa-robot"></i></div>
             <div>
-                <div class="ai-bubble">Xin chào! Tôi là <b>LOCAL AI</b> 👋<br>Tôi có thể giúp bạn khám phá địa điểm, tìm khách sạn, lên lịch trình và tư vấn du lịch. Bạn muốn đi đâu hôm nay? ✈️</div>
+                <div class="ai-bubble">Xin chào! Tôi là <b>LOCAL AI</b> 👋<br>Trợ lý du lịch thông minh của <b>Sở Văn Hóa Du Lịch</b>.<br><br>Tôi gợi ý dựa trên <b>thời tiết, mùa du lịch, sở thích</b> và <b>ngân sách</b> của bạn. Bạn đang muốn khám phá đâu? 🗺️</div>
                 <div class="ai-msg-time">Vừa xong</div>
             </div>
         </div>
@@ -1062,72 +1492,89 @@
     </div>
 </div>
 
-<!-- ===== NOTIFICATIONS PAGE ===== -->
+<!-- ===== LỊCH TRÌNH PAGE ===== -->
 <div class="notif-modal" id="notifModal">
     <div class="notif-header">
         <button class="bk-back" onclick="closeNotifications()"><i class="fas fa-arrow-left"></i></button>
-        <div class="hist-title">Thông báo</div>
+        <div class="hist-title">Lịch trình của tôi</div>
     </div>
-    <div class="notif-list">
-        <div class="notif-date-label">Hôm nay</div>
-
-        <div class="notif-item unread">
-            <div class="notif-icon-wrap" style="background:#fff0e6"><span>🎉</span></div>
-            <div class="notif-content">
-                <div class="notif-title">Ưu đãi cuối tuần — Giảm 30%</div>
-                <div class="notif-body">Đặt tour hoặc khách sạn trong hôm nay để nhận ngay voucher giảm 30% cho chuyến đi kế tiếp.</div>
-                <div class="notif-time">2 giờ trước</div>
-            </div>
-            <div class="notif-dot"></div>
-        </div>
-
-        <div class="notif-item unread">
-            <div class="notif-icon-wrap" style="background:#e8f5ff"><span>✅</span></div>
-            <div class="notif-content">
-                <div class="notif-title">Booking LAI-DT001 đã xác nhận</div>
-                <div class="notif-body">Bánh Mì Huỳnh Hoa đã xác nhận đặt bàn của bạn vào lúc 19:00 ngày 22/03/2026.</div>
-                <div class="notif-time">5 giờ trước</div>
-            </div>
-            <div class="notif-dot"></div>
-        </div>
-
-        <div class="notif-date-label">Hôm qua</div>
-
-        <div class="notif-item">
-            <div class="notif-icon-wrap" style="background:#f0fff4"><span>🗺️</span></div>
-            <div class="notif-content">
-                <div class="notif-title">AI gợi ý địa điểm mới</div>
-                <div class="notif-body">Dựa trên lịch sử của bạn, LOCAL AI gợi ý: Quán Bún Bò Huế O Xuân — đánh giá 4.9 ⭐ gần bạn.</div>
-                <div class="notif-time">Hôm qua, 14:22</div>
+    <div class="notif-list" style="padding:12px 0 72px; background:#f4f7fb;">
+        <!-- Trip header -->
+        <div class="itinerary-trip-header">
+            <div class="itin-trip-name">🏖️ Đà Nẵng – Hội An</div>
+            <div class="itin-trip-meta">
+                <span><i class="fas fa-calendar"></i> 15/4 – 17/4/2026</span>
+                <span><i class="fas fa-users"></i> 2 người</span>
             </div>
         </div>
 
-        <div class="notif-item">
-            <div class="notif-icon-wrap" style="background:#fef9e7"><span>💰</span></div>
-            <div class="notif-content">
-                <div class="notif-title">Hoàn tiền thành công</div>
-                <div class="notif-body">Ví LocalAI của bạn vừa nhận 85.000đ hoàn tiền từ booking LAI-HN002.</div>
-                <div class="notif-time">Hôm qua, 09:10</div>
+        <!-- Day 1 -->
+        <div class="itin-day-block">
+            <div class="itin-day-label">📅 Ngày 1 — Thứ Tư, 15/4</div>
+            <div class="itin-item">
+                <div class="itin-time">07:00</div>
+                <div class="itin-dot" style="background:#1ba0e2"></div>
+                <div class="itin-body"><div class="itin-place">✈️ Khởi hành từ Hà Nội</div><div class="itin-desc">Bay VJ123 — Tân Sơn Nhất → Đà Nẵng</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">09:30</div>
+                <div class="itin-dot" style="background:#27ae60"></div>
+                <div class="itin-body"><div class="itin-place">🏨 Nhận phòng Mường Thanh</div><div class="itin-desc">Khách sạn 4★ · View biển Mỹ Khê</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">12:00</div>
+                <div class="itin-dot" style="background:#e67e22"></div>
+                <div class="itin-body"><div class="itin-place">🍜 Ăn trưa — Mỳ Quảng Bà Mua</div><div class="itin-desc">Đặc sản địa phương · AI gợi ý 4.8⭐</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">15:00</div>
+                <div class="itin-dot" style="background:#9b59b6"></div>
+                <div class="itin-body"><div class="itin-place">🌉 Cầu Rồng & Bãi biển Mỹ Khê</div><div class="itin-desc">Thời tiết tốt · Thích hợp chụp ảnh</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">19:00</div>
+                <div class="itin-dot" style="background:#e74c3c"></div>
+                <div class="itin-body"><div class="itin-place">🍢 Chợ đêm Sơn Trà</div><div class="itin-desc">Hải sản tươi · Không khí sôi động</div></div>
             </div>
         </div>
 
-        <div class="notif-date-label">Tuần trước</div>
-
-        <div class="notif-item">
-            <div class="notif-icon-wrap" style="background:#fdecea"><span>❌</span></div>
-            <div class="notif-content">
-                <div class="notif-title">Booking LAI-DN003 đã huỷ</div>
-                <div class="notif-body">Tour Bà Nà Hills ngày 30/01 đã được huỷ thành công. Hoàn tiền trong vòng 3–5 ngày làm việc.</div>
-                <div class="notif-time">28/01/2026</div>
+        <!-- Day 2 -->
+        <div class="itin-day-block">
+            <div class="itin-day-label">📅 Ngày 2 — Thứ Năm, 16/4</div>
+            <div class="itin-item">
+                <div class="itin-time">07:30</div>
+                <div class="itin-dot" style="background:#1ba0e2"></div>
+                <div class="itin-body"><div class="itin-place">🚡 Bà Nà Hills – Cầu Vàng</div><div class="itin-desc">Cáp treo dài nhất thế giới · Mua vé trước</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">14:00</div>
+                <div class="itin-dot" style="background:#e67e22"></div>
+                <div class="itin-body"><div class="itin-place">🏮 Phố cổ Hội An</div><div class="itin-desc">UNESCO · Đèn lồng · Ẩm thực đặc sắc</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">20:00</div>
+                <div class="itin-dot" style="background:#f39c12"></div>
+                <div class="itin-body"><div class="itin-place">🏮 Thả đèn hoa đăng sông Hoài</div><div class="itin-desc">Trải nghiệm lãng mạn · AI khuyên đi</div></div>
             </div>
         </div>
 
-        <div class="notif-item">
-            <div class="notif-icon-wrap" style="background:#f3e8ff"><span>👑</span></div>
-            <div class="notif-content">
-                <div class="notif-title">Chúc mừng lên hạng VIP!</div>
-                <div class="notif-body">Bạn vừa đạt hạng Khách VIP. Tận hưởng ưu tiên đặt chỗ, phòng chờ sân bay và nhiều đặc quyền khác.</div>
-                <div class="notif-time">25/01/2026</div>
+        <!-- Day 3 -->
+        <div class="itin-day-block">
+            <div class="itin-day-label">📅 Ngày 3 — Thứ Sáu, 17/4</div>
+            <div class="itin-item">
+                <div class="itin-time">08:30</div>
+                <div class="itin-dot" style="background:#27ae60"></div>
+                <div class="itin-body"><div class="itin-place">🪨 Ngũ Hành Sơn</div><div class="itin-desc">5 ngọn núi đá cẩm thạch huyền thoại</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">11:00</div>
+                <div class="itin-dot" style="background:#e67e22"></div>
+                <div class="itin-body"><div class="itin-place">🛍️ Mua sắm đồ lưu niệm</div><div class="itin-desc">Làng đá mỹ nghệ Non Nước</div></div>
+            </div>
+            <div class="itin-item">
+                <div class="itin-time">14:00</div>
+                <div class="itin-dot" style="background:#e74c3c"></div>
+                <div class="itin-body"><div class="itin-place">✈️ Ra sân bay về Hà Nội</div><div class="itin-desc">Bay VJ456 · Check-in trước 2 tiếng</div></div>
             </div>
         </div>
     </div>
@@ -1149,8 +1596,8 @@
         </button>
     </div>
     <div class="bn-tab" id="bnNotif" onclick="navigateTo('notif')">
-        <i class="fas fa-bell"></i>
-        <span>Thông báo</span>
+        <i class="fas fa-calendar-alt"></i>
+        <span>Lịch trình</span>
     </div>
     <div class="bn-tab" id="userBtn" onclick="navigateTo('user')">
         <i class="fas fa-user-circle"></i>
@@ -1166,7 +1613,7 @@
     let optionsOpen = false;
 
     window.addEventListener('click', function(e) {
-        if (e.target.id !== 'aiCitySearch') document.getElementById('citySuggestions').style.display = 'none';
+        // search suggestions removed
         // Close options dropdown if click is outside
         if (optionsOpen && !e.target.closest('#optionsOverlay') && !e.target.closest('#userBtn')) {
             optionsOpen = false;
@@ -1304,59 +1751,65 @@
         { id: 75, n: "Novotel Phu Quoc", city: "Phú Quốc", c: "Lưu trú", p: 2500000, r: 4.6, d: 10.0, revCount: 5200, images: ["https://picsum.photos/id/670/400/250"], addr: "Bãi Trường, Dương Tơ", hours: "Mở 24/7", phone: "0297 3628 888", desc: "Khu nghỉ dưỡng quy mô lớn với nhiều hồ bơi, phù hợp cho đoàn đông người và công ty.", pros: ["Nhiều hồ bơi", "Giá cả hợp lý"], cons: ["Thiết kế hơi đại trà", "Khách đoàn đông ồn ào"], menu: null, reviews: [{user: "Hữu Trí", rate: 4, text: "Resort tiêu chuẩn, phòng ốc sạch sẽ và bãi biển rộng."}] }
     ];
 
-    let currentCity = "All";
-    const aiList = document.getElementById('aiList');
-    const topCitiesList = ["Tất cả", "Sài Gòn", "Hà Nội", "Đà Nẵng", "Đà Lạt", "Phú Quốc"];
-    const citySearchInput = document.getElementById('aiCitySearch');
-    const citySuggBox = document.getElementById('citySuggestions');
+    let currentUserLocation = "Đà Nẵng";
 
     function render(dataList, containerId = 'aiList') {
         const container = document.getElementById(containerId);
         if (dataList.length === 0) {
-            container.innerHTML = `<div style="padding:20px; text-align:center; color:#999; width:100%;">Không có địa điểm phù hợp!</div>`;
+            container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text3);grid-column:1/-1">Không có địa điểm tại khu vực này</div>`;
             return;
         }
         container.innerHTML = dataList.map(item => `
             <div class="card" onclick="openDetail(${item.id})">
                 <span class="card-badge">${item.c}</span>
-                <img src="${item.images[0]}" class="card-img">
+                <img src="${item.images[0]}" class="card-img" loading="lazy">
                 <div class="card-body">
                     <div class="card-title">${item.n}</div>
                     <div class="card-price">${item.p > 0 ? item.p.toLocaleString('vi-VN')+'đ' : 'Miễn phí'}</div>
-                    <div class="card-meta"><span>⭐ ${item.r}</span><span>📍 ${item.d}km</span></div>
+                    <div class="card-meta"><span>⭐ ${item.r}</span><span>📍 ${item.city}</span></div>
                 </div>
             </div>
         `).join('');
     }
 
-    citySearchInput.oninput = function() {
-        const val = this.value.toLowerCase().trim();
-        let matches = topCitiesList.filter(c => c.toLowerCase().includes(val));
-        if (matches.length === 0 || val === "") { citySuggBox.style.display = 'none'; return; }
-        citySuggBox.innerHTML = matches.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#e74c3c; margin-right:8px;"></i> ${city}</div>`).join('');
-        citySuggBox.style.display = 'block';
+    function updateLocationUI(city) {
+        const heroText = document.getElementById('heroLocationText');
+        if (heroText) heroText.textContent = city;
+        const searchSpan = document.getElementById('searchBarPlaceholder');
+        if (searchSpan) searchSpan.textContent = `Khám phá ${city}...`;
+        const aiTitle = document.getElementById('aiPickTitle');
+        if (aiTitle) aiTitle.innerHTML = `AI gợi ý tại ${city} 📍 <span class="section-title-link" onclick="showToast('Xem thêm — Đang phát triển')">Xem thêm ›</span>`;
+        document.querySelectorAll('.ls-city').forEach(el => {
+            el.classList.toggle('active-loc', el.getAttribute('data-city') === city);
+        });
+    }
+
+    window.changeLocation = function(city) {
+        currentUserLocation = city;
+        updateLocationUI(city);
+        render(allPlaces.filter(p => p.city === city));
+        closeLocationPicker();
+        showToast(`📍 Đã chuyển sang ${city}`);
     };
 
-    citySearchInput.onfocus = function() {
-        citySuggBox.innerHTML = topCitiesList.map(city => `<div class="city-sugg-item" onclick="selectAiCity('${city}')"><i class="fas fa-map-marker-alt" style="color:#e74c3c; margin-right:8px;"></i> ${city}</div>`).join('');
-        citySuggBox.style.display = 'block';
+    window.openLocationPicker = function() {
+        updateLocationUI(currentUserLocation);
+        const sheet = document.getElementById('locationSheet');
+        if (sheet) { sheet.classList.add('active'); document.body.style.overflow = 'hidden'; }
     };
 
-    window.selectAiCity = function(city) {
-        citySearchInput.value = city === "Tất cả" ? "" : city;
-        citySuggBox.style.display = 'none';
-        currentCity = city === "Tất cả" ? "All" : city;
-        filterByCat('all', document.querySelector('.cat-pill'));
+    window.closeLocationPicker = function() {
+        const sheet = document.getElementById('locationSheet');
+        if (sheet) { sheet.classList.remove('active'); document.body.style.overflow = 'auto'; }
     };
 
-    window.scrollAi = function(dir) { document.getElementById('aiList').scrollBy({ left: dir * 280, behavior: 'smooth' }); };
-
-    window.filterByCat = function(category, el) {
-        document.querySelectorAll('.cat-pill').forEach(btn => btn.classList.remove('active'));
-        if(el) el.classList.add('active');
-        let listByCity = (currentCity === "All") ? allPlaces : allPlaces.filter(p => p.city === currentCity);
-        let finalFiltered = (category === "all") ? listByCity : listByCity.filter(p => p.c === category);
-        render(finalFiltered);
+    window.useCurrentGPS = function() {
+        if (!navigator.geolocation) { showToast('Thiết bị không hỗ trợ GPS 😔'); return; }
+        showToast('Đang xác định vị trí GPS... 📡');
+        navigator.geolocation.getCurrentPosition(
+            () => { changeLocation('Đà Nẵng'); showToast('✅ Đã cập nhật vị trí!'); },
+            ()  => { showToast('Không lấy được vị trí, dùng mặc định 📍'); }
+        );
     };
 
     let currentImgIdx = 0;
@@ -1391,10 +1844,10 @@
         if (place.c === 'Ẩm thực' && place.menu) {
             document.getElementById('dmMenuBox').innerHTML = place.menu.map(m => `<div class="dm-menu-item"><span>${m.name}</span><b>${m.price}</b></div>`).join('');
             menuSec.style.display = 'block';
-            document.getElementById('dmBookBtn').innerHTML = "<i class='fas fa-utensils'></i> Đặt Bàn Nhé Bé";
+            document.getElementById('dmBookBtn').innerHTML = "<i class='fas fa-utensils'></i> Gợi ý ẩm thực";
         } else {
             menuSec.style.display = 'none';
-            document.getElementById('dmBookBtn').innerHTML = "<i class='fas fa-ticket-alt'></i> Đặt Vé Ngay";
+            document.getElementById('dmBookBtn').innerHTML = "<i class='fas fa-compass'></i> Khám phá ngay";
         }
 
         document.getElementById('dmReviewBox').innerHTML = place.reviews.map(r => `<div class="dm-review"><div class="dm-rev-user"><span>${r.user}</span> <span style="color:#f39c12"> ${'⭐'.repeat(r.rate)}</span></div><div class="dm-rev-text">"${r.text}"</div></div>`).join('');
@@ -1418,71 +1871,11 @@
         document.getElementById('dmImgCount').innerText = `${currentImgIdx + 1} / ${total}`;
     };
 
-    render(allPlaces);
+    // Initial render filtered to current location
+    updateLocationUI(currentUserLocation);
+    render(allPlaces.filter(p => p.city === currentUserLocation));
 
 
-    // === UTILITY GRID SWIPE ===
-    let currentUtilPage = 0;
-    const utilPages = document.querySelectorAll('.utility-page');
-    const utilDotEls = document.querySelectorAll('.util-dot');
-
-    window.goUtilPage = function(idx) {
-        utilPages[currentUtilPage].classList.remove('active');
-        utilDotEls[currentUtilPage].classList.remove('active');
-        currentUtilPage = idx;
-        utilPages[currentUtilPage].classList.add('active');
-        utilDotEls[currentUtilPage].classList.add('active');
-    };
-
-    let utilTouchStartX = 0;
-    const utilCard = document.getElementById('utilityCard');
-    utilCard.addEventListener('touchstart', e => { utilTouchStartX = e.touches[0].clientX; }, { passive: true });
-    utilCard.addEventListener('touchend', e => {
-        const dx = e.changedTouches[0].clientX - utilTouchStartX;
-        if (Math.abs(dx) > 40) {
-            const next = dx < 0
-                ? Math.min(currentUtilPage + 1, utilPages.length - 1)
-                : Math.max(currentUtilPage - 1, 0);
-            if (next !== currentUtilPage) goUtilPage(next);
-        }
-    }, { passive: true });
-
-    window.utilityClick = function(type) {
-        const labels = {
-            // Page 1
-            bay:        'Tìm chuyến bay',
-            khachsan:   'Tìm khách sạn',
-            hoatdong:   'Hoạt động du lịch',
-            xekhach:    'Vé xe khách',
-            thuyền:     'Du thuyền',
-            combo:      'Combo tiết kiệm',
-            tour:       'Tour',
-            xe:         'Thuê xe',
-            airport:    'Đưa đón sân bay',
-            // Page 2
-            restaurant: 'Nhà hàng đặt bàn',
-            spa:        'Spa & Wellness',
-            show:       'Show & Sự kiện',
-            golf:       'Golf & Thể thao',
-            visa:       'Dịch vụ Visa',
-            baohi:      'Bảo hiểm du lịch',
-            photo:      'Chụp ảnh du lịch',
-            simcard:    'SIM & WiFi',
-            luggage:    'Gửi hành lý',
-            // Page 3
-            voucher:    'Voucher Hot',
-            loyalty:    'Hội viên VIP',
-            deals:      'Flash Deals',
-            gift:       'Quà tặng & Ưu đãi',
-            topup:      'Nạp ví',
-            referral:   'Giới thiệu bạn bè',
-            cashback:   'Hoàn tiền',
-            partner:    'Đối tác liên kết',
-            support:    'Hỗ trợ 24/7',
-        };
-        const name = labels[type] || type;
-        showToast(`${name} — Đang phát triển 🚀`);
-    };
 
     // === TOP-LEFT OPTIONS DROPDOWN ===
     window.toggleOptions = function() {
@@ -1502,9 +1895,8 @@
     window.optionNav = function(type) {
         toggleOptions();
         const labels = {
-            home: 'Trang chủ', search: 'Tìm kiếm', booking: 'Đặt chỗ của tôi',
-            voucher: 'Ví Voucher', map: 'Bản đồ', trips: 'Chuyến đi của tôi',
-            loyalty: 'Hội viên & Điểm thưởng', notifications: 'Thông báo',
+            home: 'Trang chủ', search: 'Tìm kiếm', map: 'Bản đồ',
+            wallet: 'Ví & Vay', preference: 'Sở thích du lịch',
             merchant: 'Merchant Portal', support: 'Hỗ trợ 24/7',
             settings: 'Cài đặt', about: 'Về chúng tôi'
         };
@@ -1764,7 +2156,7 @@
 
     // ===== NAVIGATION =====
     function closeAllModals() {
-        ['aiChatModal','aiPlannerModal','historyModal','notifModal'].forEach(id => {
+        ['aiChatModal','aiPlannerModal','historyModal','notifModal','voucherModal','eventsModal','prefModal','locationSheet','topupSheet','voucherUseSheet'].forEach(id => {
             document.getElementById(id)?.classList.remove('active');
         });
         if (optionsOpen) toggleOptions();
@@ -1796,6 +2188,147 @@
         document.getElementById('aiPlannerModal').classList.remove('active');
         document.body.style.overflow = 'auto';
         setActiveTab('home');
+    };
+
+    // ===== THEME =====
+    window.toggleTheme = function() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const newTheme = isDark ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeUI(newTheme);
+    };
+    function updateThemeUI(theme) {
+        const isDark = theme === 'dark';
+        const icon = document.getElementById('themeIcon');
+        const label = document.getElementById('themeLabel');
+        const track = document.getElementById('themeSwitchTrack');
+        if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        if (label) label.textContent = isDark ? 'Tối' : 'Sáng';
+        if (track) track.classList.toggle('on', isDark);
+    }
+    (function initTheme() {
+        const saved = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', saved);
+        updateThemeUI(saved);
+    })();
+
+    // ===== VOUCHER =====
+    const voucherData = [
+        [
+            { discount:'30%', unit:'GIẢM', name:'Ẩm thực Hội An', cond:'Đơn từ 200K · Nhà hàng đối tác', exp:'HSD: 30/4/2026', tag:'Sắp hết', tagClass:'' },
+            { discount:'50K', unit:'OFF', name:'Khách sạn Đà Nẵng', cond:'Đặt phòng từ 2 đêm', exp:'HSD: 15/5/2026', tag:'Mới', tagClass:'new' },
+            { discount:'20%', unit:'GIẢM', name:'Tour Bà Nà Hills', cond:'Áp dụng cuối tuần', exp:'HSD: 1/6/2026', tag:'', tagClass:'' },
+        ],
+        [
+            { discount:'15%', unit:'GIẢM', name:'Mường Thanh Hotels', cond:'Đặt trực tiếp qua app', exp:'HSD: 31/5/2026', tag:'Đối tác', tagClass:'new' },
+            { discount:'100K', unit:'OFF', name:'Vietravel Tours', cond:'Tour từ 3 ngày 2 đêm', exp:'HSD: 20/5/2026', tag:'Mới', tagClass:'new' },
+            { discount:'25%', unit:'GIẢM', name:'Grab Đà Nẵng', cond:'Chuyến đi trong khu vực', exp:'HSD: 30/4/2026', tag:'', tagClass:'' },
+        ],
+        [
+            { discount:'40%', unit:'GIẢM', name:'Flash: Spa Luxury', cond:'Hôm nay 20:00–23:59', exp:'Còn 3 giờ', tag:'🔥HOT', tagClass:'' },
+            { discount:'60K', unit:'OFF', name:'Flash: Cà phê view biển', cond:'50 voucher đầu tiên', exp:'Còn 12 voucher', tag:'⚡Nhanh', tagClass:'' },
+        ],
+    ];
+    let currentVoucherTab = 0;
+    window.switchVoucherTab = function(idx, el) {
+        currentVoucherTab = idx;
+        document.querySelectorAll('.voucher-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+        renderVouchers();
+    };
+    function renderVouchers() {
+        const list = document.getElementById('voucherList');
+        list.innerHTML = voucherData[currentVoucherTab].map(v => `
+            <div class="voucher-card" onclick="showToast('${v.name} — Đang áp dụng 🎟️')">
+                ${v.tag ? `<div class="voucher-tag ${v.tagClass}">${v.tag}</div>` : ''}
+                <div class="voucher-left"><div class="voucher-discount">${v.discount}</div><div class="voucher-unit">${v.unit}</div></div>
+                <div class="voucher-right">
+                    <div class="voucher-name">${v.name}</div>
+                    <div class="voucher-cond">${v.cond}</div>
+                    <div class="voucher-bottom"><span class="voucher-exp">⏰ ${v.exp}</span><button class="voucher-use-btn" onclick="openVoucherUse('${v.code || 'LOCAL-'+v.id}','${v.discount || '20%'}','${v.apply || 'Tất cả địa điểm'}','${v.exp}')">Dùng ngay</button></div>
+                </div>
+            </div>`).join('');
+    }
+    window.openVoucher = function() {
+        document.getElementById('voucherModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        renderVouchers();
+        setActiveTab('home');
+    };
+    window.closeVoucher = function() {
+        document.getElementById('voucherModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+
+    // ===== EVENTS =====
+    window.openEvents = function() {
+        document.getElementById('eventsModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setActiveTab('home');
+    };
+    window.closeEvents = function() {
+        document.getElementById('eventsModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+
+    // ===== CHECK-IN =====
+    let checkinRating = 0;
+    window.openCheckin = function(placeName) {
+        document.getElementById('checkinPlaceName').textContent = placeName || 'Check-in địa điểm';
+        checkinRating = 0;
+        document.querySelectorAll('.checkin-star').forEach(s => s.classList.remove('lit'));
+        document.getElementById('checkinTextarea') && (document.getElementById('checkinTextarea').value = '');
+        // Reset to step 1
+        document.getElementById('checkinStep1').style.display = 'block';
+        document.getElementById('checkinStep2').style.display = 'none';
+        document.getElementById('checkinGpsIcon').textContent = '📡';
+        document.getElementById('checkinGpsTitle').textContent = 'Đang xác nhận vị trí...';
+        document.getElementById('checkinGpsSub').textContent = 'Local AI đang xác minh bạn có đang ở địa điểm này không';
+        document.getElementById('checkinVerifiedBadge').style.display = 'none';
+        document.getElementById('checkinOverlay').classList.add('active');
+        // Simulate GPS check (1.5s)
+        setTimeout(() => {
+            document.getElementById('checkinGpsIcon').textContent = '✅';
+            document.getElementById('checkinGpsTitle').textContent = 'Vị trí đã xác nhận!';
+            document.getElementById('checkinGpsSub').textContent = 'Bạn đang ở đúng địa điểm này';
+            document.getElementById('checkinVerifiedBadge').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('checkinStep1').style.display = 'none';
+                document.getElementById('checkinStep2').style.display = 'block';
+            }, 1200);
+        }, 1500);
+    };
+    window.closeCheckin = function() {
+        document.getElementById('checkinOverlay').classList.remove('active');
+    };
+    window.setCheckinStar = function(n) {
+        checkinRating = n;
+        document.querySelectorAll('.checkin-star').forEach((s,i) => s.classList.toggle('lit', i < n));
+    };
+    window.submitCheckin = function() {
+        if (!checkinRating) { showToast('Hãy chọn số sao đánh giá ⭐'); return; }
+        closeCheckin();
+        showToast(`Check-in thành công! ${checkinRating}⭐ · Cảm ơn bạn đã đánh giá 🎉`);
+    };
+    document.getElementById('checkinOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeCheckin();
+    });
+
+    // ===== PREFERENCES =====
+    window.openPref = function() {
+        document.getElementById('prefModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closePref = function() {
+        document.getElementById('prefModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+    window.togglePref = function(el) {
+        el.classList.toggle('selected');
+    };
+    window.selectBudget = function(el) {
+        el.closest('.pref-budget-row').querySelectorAll('.pref-budget-btn').forEach(b => b.classList.remove('selected'));
+        el.classList.add('selected');
     };
 
     // ===== AI CHAT =====
@@ -1988,6 +2521,186 @@
     window.closeItinerary = function() {
         document.getElementById('itineraryModal').classList.remove('active');
     };
+
+    // ===== WALLET TOP-UP =====
+    let selectedTopupAmount = '100.000đ';
+    window.openTopup = function() {
+        document.getElementById('topupSheet').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeTopup = function() {
+        document.getElementById('topupSheet').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+    window.selectTopupAmount = function(el, amount) {
+        selectedTopupAmount = amount;
+        el.closest('.topup-amount-chips').querySelectorAll('.topup-chip').forEach(c => c.classList.remove('sel'));
+        el.classList.add('sel');
+        document.getElementById('topupConfirmBtn').textContent = `Nạp ${amount} ngay`;
+    };
+    window.selectTopupMethod = function(el) {
+        el.closest('.topup-methods').querySelectorAll('.topup-method').forEach(m => m.classList.remove('sel'));
+        el.classList.add('sel');
+    };
+    window.confirmTopup = function() {
+        closeTopup();
+        showToast(`✅ Nạp ${selectedTopupAmount} thành công! Số dư đã được cập nhật`);
+    };
+
+    // ===== VOUCHER USE =====
+    window.openVoucherUse = function(code, discount, apply, exp) {
+        document.getElementById('vusCode').textContent = code || 'LOCAL-2026';
+        document.getElementById('vusDiscount').textContent = discount || '20%';
+        document.getElementById('vusApply').textContent = apply || 'Tất cả địa điểm';
+        document.getElementById('vusExp').textContent = exp || '30/04/2026';
+        document.getElementById('voucherUseSheet').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeVoucherUse = function() {
+        document.getElementById('voucherUseSheet').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+    window.copyVoucherCode = function() {
+        const code = document.getElementById('vusCode').textContent;
+        navigator.clipboard?.writeText(code).then(() => showToast('✅ Đã sao chép mã voucher!')).catch(() => showToast('Mã: ' + code));
+    };
+
+    // ===== ONBOARDING =====
+    let obStep = 0;
+    const obSteps = [
+        {
+            render: () => `
+                <div class="ob-emoji">👋</div>
+                <div class="ob-title">Chào mừng đến với Local AI!</div>
+                <div class="ob-sub">Trợ lý du lịch thông minh của Sở Văn Hóa Du Lịch.<br>Cho tôi biết thêm về bạn nhé!</div>
+                <input class="ob-input" id="obNameInput" placeholder="Họ và tên của bạn" type="text" maxlength="40">
+                <div style="margin-top:12px;">
+                    <input class="ob-input" id="obAgeInput" placeholder="Tuổi (không bắt buộc)" type="number" min="10" max="99" style="margin-top:0;">
+                </div>
+            `,
+            next: () => {
+                const name = document.getElementById('obNameInput')?.value?.trim();
+                if (!name) { showToast('Vui lòng nhập tên của bạn 😊'); return false; }
+                localStorage.setItem('userName', name);
+                return true;
+            }
+        },
+        {
+            render: () => `
+                <div class="ob-emoji">🎯</div>
+                <div class="ob-title">Bạn thích trải nghiệm gì?</div>
+                <div class="ob-sub">Chọn những gì bạn yêu thích — AI sẽ gợi ý phù hợp hơn</div>
+                <div class="ob-chip-grid">
+                    ${[['🍜','Ẩm thực'],['🏞️','Thắng cảnh'],['🎵','Âm nhạc'],['🏄','Thể thao'],['🏛️','Văn hóa'],['🛍️','Mua sắm'],['🧖','Spa & Wellness'],['🎭','Lễ hội'],['🌊','Biển & Bơi'],['⛰️','Trekking'],['📸','Nhiếp ảnh'],['🏕️','Cắm trại']].map(([icon, label]) =>
+                        `<div class="ob-chip" onclick="this.classList.toggle('sel')">${icon} ${label}</div>`
+                    ).join('')}
+                </div>
+            `,
+            next: () => true
+        },
+        {
+            render: () => `
+                <div class="ob-emoji">💰</div>
+                <div class="ob-title">Ngân sách mỗi ngày?</div>
+                <div class="ob-sub">AI sẽ chỉ gợi ý những nơi phù hợp với túi tiền của bạn</div>
+                <div class="ob-budget-grid" id="obBudgetGrid">
+                    <div class="ob-budget-card" onclick="selectObBudget(this,'tietkiem')">
+                        <div style="font-size:24px;margin-bottom:6px;">🎒</div>
+                        <div class="ob-bc-amount">Tiết kiệm</div>
+                        <div class="ob-bc-label">&lt; 500.000đ</div>
+                    </div>
+                    <div class="ob-budget-card sel" onclick="selectObBudget(this,'vuphai')">
+                        <div style="font-size:24px;margin-bottom:6px;">👍</div>
+                        <div class="ob-bc-amount">Vừa phải</div>
+                        <div class="ob-bc-label">500K – 1.5M</div>
+                    </div>
+                    <div class="ob-budget-card" onclick="selectObBudget(this,'thoaimi')">
+                        <div style="font-size:24px;margin-bottom:6px;">✨</div>
+                        <div class="ob-bc-amount">Thoải mái</div>
+                        <div class="ob-bc-label">1.5M – 3M</div>
+                    </div>
+                    <div class="ob-budget-card" onclick="selectObBudget(this,'caocap')">
+                        <div style="font-size:24px;margin-bottom:6px;">👑</div>
+                        <div class="ob-bc-amount">Cao cấp</div>
+                        <div class="ob-bc-label">&gt; 3.000.000đ</div>
+                    </div>
+                </div>
+            `,
+            next: () => true
+        },
+        {
+            render: () => `
+                <div class="ob-emoji">📍</div>
+                <div class="ob-title">Cho phép truy cập vị trí</div>
+                <div class="ob-sub">Local AI dùng vị trí thực tế của bạn để gợi ý những địa điểm gần nhất và phù hợp nhất</div>
+                <div class="ob-gps-box">
+                    <div class="ob-gps-icon">🛰️</div>
+                    <p>Vị trí của bạn <b>chỉ được dùng trong app</b> để cá nhân hóa gợi ý.<br>Không chia sẻ với bên thứ ba.</p>
+                    <button class="ob-gps-btn" onclick="requestObGPS()"><i class="fas fa-crosshairs"></i> Bật GPS ngay</button>
+                </div>
+            `,
+            next: () => { finishOnboarding(); return false; }
+        }
+    ];
+
+    function renderObStep() {
+        document.getElementById('obBody').innerHTML = obSteps[obStep].render();
+        for (let i=0;i<4;i++) {
+            document.getElementById(`obDot${i}`)?.classList.toggle('active', i <= obStep);
+        }
+        document.getElementById('obBackBtn').style.display = obStep > 0 ? 'flex' : 'none';
+        const nextBtn = document.getElementById('obNextBtn');
+        nextBtn.textContent = obStep === 3 ? 'Hoàn tất 🎉' : 'Tiếp tục';
+    }
+
+    window.obNext = function() {
+        if (obSteps[obStep].next() === false) return;
+        if (obStep < 3) { obStep++; renderObStep(); }
+        else finishOnboarding();
+    };
+    window.obBack = function() {
+        if (obStep > 0) { obStep--; renderObStep(); }
+    };
+    window.selectObBudget = function(el, key) {
+        el.closest('#obBudgetGrid').querySelectorAll('.ob-budget-card').forEach(c => c.classList.remove('sel'));
+        el.classList.add('sel');
+        localStorage.setItem('userBudget', key);
+    };
+    window.requestObGPS = function() {
+        if (navigator.geolocation) {
+            showToast('Đang xác định vị trí GPS... 📡');
+            navigator.geolocation.getCurrentPosition(() => {
+                showToast('✅ Đã kết nối GPS!');
+                setTimeout(finishOnboarding, 800);
+            }, () => finishOnboarding());
+        } else finishOnboarding();
+    };
+    window.finishOnboarding = function() {
+        localStorage.setItem('onboardingDone', '1');
+        document.getElementById('onboardingModal').classList.remove('active');
+        const name = localStorage.getItem('userName');
+        if (name) showToast(`Chào mừng, ${name}! 🎉 Local AI sẵn sàng phục vụ bạn`);
+        const nameEl = document.getElementById('profileName');
+        if (nameEl && name) nameEl.textContent = name;
+    };
+
+    // Show onboarding on first visit
+    if (!localStorage.getItem('onboardingDone')) {
+        setTimeout(() => {
+            obStep = 0;
+            renderObStep();
+            document.getElementById('onboardingModal').classList.add('active');
+        }, 600);
+    }
+
+    // Restore profile name on load
+    (function restoreProfile() {
+        const savedName = localStorage.getItem('userName');
+        if (savedName) {
+            const el = document.getElementById('profileName');
+            if (el) el.textContent = savedName;
+        }
+    })();
 
 </script>
 
